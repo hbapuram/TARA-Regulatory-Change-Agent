@@ -294,11 +294,9 @@
   <div class="hero-grid">
     <div class="keynote"><h4>One sentence</h4><p>TARA turns a changed, cited rule into a case-specific, dated, human-reviewable action and checks the evidence used to close it.</p></div>
   </div>
-  <div class="cta-row"><a class="cta" href="https://tara-demo.onrender.com/">Open the live demo</a><a class="cta secondary" href="judge-slide-checklist.md">Use the judge deck checklist</a><a class="cta secondary" href="evaluation-card.md">Read the evaluation card</a></div>
 </section>
 
 <section id="judge">
-  <h2><span class="num">02</span>The 90-second judge demo</h2>
   <p class="lede">Use one narrow case to prove the full loop before showing the broader platform. The interface now keeps internal IDs and agent names inside optional technical details.</p>
   <div class="persona">
     <div class="persona-card"><h4>The synthetic person</h4><div class="fact-row"><span class="k">Name</span><span class="v">Maeve</span></div><div class="fact-row"><span class="k">Tax resident</span><span class="v">Ireland</span></div><div class="fact-row"><span class="k">Holding</span><span class="v">Luxembourg offshore fund</span></div><div class="fact-row"><span class="k">Acquired</span><span class="v">15 Aug 2018</span></div><div class="fact-row"><span class="k">8-year event</span><span class="v">15 Aug 2026</span></div></div>
@@ -306,7 +304,6 @@
   </div>
   <ol class="step-list">
     <li><b>Open Maeve.</b> The demo starts with a simple Before / Now comparison, not a wall of profile fields.</li>
-    <li><b>Show what changed.</b> The source moved from 41% to 38%; hashes and exact source text remain available only if a judge asks.</li>
     <li><b>Show what applies.</b> Maeve's 2026 event selects the current 38% rule and creates four next steps.</li>
     <li><b>Open the Action plan.</b> Point to the task, date, source link, and evidence to keep.</li>
     <li><b>Try 41%.</b> The evidence screen says Needs correction even though the arithmetic is internally consistent.</li>
@@ -432,7 +429,6 @@
 
 <section id="boundaries">
   <h2><span class="num">11</span>What TARA does not claim</h2>
-  <p class="lede">A strong competition entry is specific about its evidence boundary.</p>
   <div class="honest"><h4>Prototype boundary</h4><p>TARA is not legal, tax, immigration, or filing advice. The demo uses synthetic people and controlled source snapshots. A qualified professional must review real-world actions and every domain pack before production use.</p></div>
   <div class="corrections">
     <div class="correction"><div class="c-num">01</div><div><div class="c-head"><span class="c-title">No continuous source crawler yet</span><span class="pill yours">next</span></div><div class="c-body">SURVEY compares versioned snapshots. A monitored ingestion and human approval workflow is still required.</div></div></div>
@@ -450,10 +446,8 @@ pytest -q
 python tools/build_evaluation_card.py
 python -m uvicorn demo.api:app --host 127.0.0.1 --port 8000</pre><p>Open <code>http://127.0.0.1:8000</code>, choose Maeve, and follow the source change to evidence verification.</p></div></details>
   <details class="tech"><summary>Clean public release</summary><div class="tech-body"><p>The private repository remains the working history. <code>tools/build_public_release.py</code> copies only paths in <code>public-release-manifest.txt</code> into a separate directory, rejects secrets and internal files, and initializes no Git history. After final review, create a new public repository and make one release commit from that directory. The private commits and messages are never transferred.</p></div></details>
-  <details class="tech"><summary>Likely judge questions</summary><div class="tech-body"><ul><li><b>Where is the AI?</b> The default browser path makes a server-side OpenAI call. The model discovers and sequences TARA's MCP tools; the screen shows the resulting tool trace.</li><li><b>Why MCP?</b> One discoverable interface lets the model and third-party clients use the same guarded tools, rather than a hidden prompt-only workflow.</li><li><b>How do you prevent hallucination?</b> The model must use returned IDs; controlled source snapshots, explicit pack rules, fail-closed missing facts, deterministic calculations, and an audit chain constrain the result.</li><li><b>What is validated?</b> The Maeve source-to-action loop, the AI/MCP path, and 115 automated tests. Independent domain sign-off remains pending.</li><li><b>How does it scale?</b> Add a reviewed data pack; the MCP discovery and deterministic controls remain unchanged.</li></ul></div></details>
   <ol class="takeaways"><li><b>Lead with one result.</b> 41%→38%, selected by event date.</li><li><b>Show the failure.</b> A wrong-but-consistent 41% calculation is returned.</li><li><b>Show the proof.</b> Open ATLAS and the evaluation card.</li><li><b>Label the boundary.</b> Synthetic data, controlled sources, human review required.</li><li><b>End with the platform.</b> Nine packs and ten tools demonstrate reusable architecture after the golden path earns trust.</li></ol>
 </section>
 
-<footer><p>Updated 13 September 2026. This guide replaces the supplied walkthrough as the canonical one-stop explanation. It preserves the visual-first structure while updating the facts, safety model, test count, deployment status, and competition narrative.</p><p style="margin-top:8px"><b>Live demo:</b> <a href="https://tara-demo.onrender.com/">tara-demo.onrender.com</a> · <b>Evaluation:</b> <a href="evaluation-card.md">evaluation-card.md</a></p></footer>
 </div>
 </body></html>
