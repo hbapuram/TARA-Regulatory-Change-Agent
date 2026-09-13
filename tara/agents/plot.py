@@ -94,7 +94,7 @@ def _condition_matches(actual: Any, operator: str, expected: Any) -> bool:
     """Evaluate the deliberately small, deterministic obligation predicate DSL.
 
     Domain packs may use only explicit comparisons. There is no expression
-    evaluation and no model judgement in this path.
+    execution and no model inference in this path.
     """
     if operator == "equals":
         return actual == expected

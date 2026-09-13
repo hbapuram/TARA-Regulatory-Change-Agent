@@ -311,7 +311,7 @@ def _evidence_for(domain_id: str, obligation_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Suggested artefacts
 #
-# ANCHOR judges a submission the holder makes; the submission itself is the
+# ANCHOR validates a submission the holder makes; the submission itself is the
 # holder's own data, not TARA's output. The demo prefills a plausible, valid
 # one so a viewer is not asked to invent a CG50A certificate number on camera
 # — every field stays editable, and the only thing that is not invented is
@@ -844,31 +844,6 @@ def index() -> Any:
     if page.exists():
         return FileResponse(page)
     return JSONResponse({"service": "tara-demo-api", "docs": "/docs", "health": "/api/health"})
-
-
-@app.get("/guide")
-def project_guide() -> Any:
-    """Serve the visual-first project guide from the canonical public origin."""
-    page = REPO_ROOT / "docs" / "tara-project-guide.html"
-    if page.exists():
-        return FileResponse(page)
-    raise HTTPException(status_code=404, detail="Project guide is not available in this build.")
-
-
-@app.get("/evaluation-card.md")
-def evaluation_card() -> Any:
-    page = REPO_ROOT / "docs" / "evaluation-card.md"
-    if page.exists():
-        return FileResponse(page, media_type="text/markdown")
-    raise HTTPException(status_code=404, detail="Evaluation card is not available in this build.")
-
-
-@app.get("/judge-slide-checklist.md")
-def judge_slide_checklist() -> Any:
-    page = REPO_ROOT / "docs" / "judge-slide-checklist.md"
-    if page.exists():
-        return FileResponse(page, media_type="text/markdown")
-    raise HTTPException(status_code=404, detail="Judge slide checklist is not available in this build.")
 
 
 # Serve the wizard's own files (app.js, replay.js, presets.json) from the same

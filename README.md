@@ -1,139 +1,37 @@
-# TARA — Tax, Assets & Residency Advisor
+# TARA — Regulatory Change to Action
 
+> **Prototype scope:** TARA uses controlled regulatory-source snapshots and synthetic prepared cases. It is not legal, tax, immigration, or filing advice. A qualified professional must review any real-world action.
 
-TARA answers a focused question: **a rule changed—who is affected, what should they do, when, and what evidence would close the work?**
+TARA is a **regulatory change-to-action prototype**. It turns a versioned source change into a cited, case-specific action and verifies the evidence used to close that action.
 
 ```mermaid
 flowchart LR
-    A[Rule changes] --> B[LLM understands the request]
-    B --> C[MCP discovers TARA tools]
-    C --> D[Deterministic TARA checks source, dates and facts]
-    D --> E{Information missing?}
-    E -->|Yes| F[Ask; do not guess]
-    E -->|No| G[Create a dated action plan]
-    G --> H{Is the evidence correct?}
-    H -->|No| I[Return it with a clear reason]
-    H -->|Yes| J[Ready for human review]
-    C & D & G & H --> K[(Keep an inspectable proof record)]
+    A[Source version changes] --> B[LLM discovers guarded MCP tools]
+    B --> C[TARA compares source text and case facts]
+    C --> D{Required facts present?}
+    D -- No --> E[Return indeterminate; ask for review]
+    D -- Yes --> F[Create a dated, owned action]
+    F --> G{Evidence exact?}
+    G -- No --> H[Return with a reason]
+    G -- Yes --> I[Close and preserve the proof trace]
 ```
 
-## Start here
+## What the prototype demonstrates
 
-| Resource | Use it for |
+The included Maeve scenario uses controlled Revenue guidance in which a Section 4.3 rate changes from **41% to 38%** for relevant events on or after **1 January 2026**. TARA preserves both source versions, selects the applicable version from the event date, creates a dated action, returns a superseded 41% calculation, accepts the exact 38% calculation, and records the process in a hash-linked trace.
+
+The browser uses an LLM as an MCP client. The model discovers the available tools and sequences the investigation. Deterministic Python controls own source comparison, effective-date selection, threshold checks, arithmetic, action ordering, and evidence outcomes. Missing material facts produce `indeterminate`; they do not create an invented action.
+
+## Current implementation
+
+| Capability | Current implementation |
 |---|---|
-| [Complete visual guide](https://tara-demo.onrender.com/guide) | One-stop explanation: picture first, technical detail second; source lives at `docs/tara-project-guide.html`. |
-| [Evaluation card](docs/evaluation-card.md) | Reproducible acceptance checks and the current evidence-based readiness score. |
-| [Demo runbook](demo/README.md) | Local launch, replay generation, and venue fallback. |
-
-
-
-1. Revenue guidance changes the fund-tax rate in **Section 4.3** from **41% to 38%** for deemed disposals arising on or after **1 January 2026**.
-2. TARA shows the old wording and the new wording side by side, while keeping digital fingerprints of both sources.
-3. It preserves the former and current rule instead of overwriting history.
-4. It uses the holding's event date to select 41% before 2026 or 38% from 2026.
-5. It creates a clear action plan with dates and the evidence to keep.
-6. It rejects a calculation using the old 41% rate and accepts an exact 38% calculation.
-7. It verifies the linked proof record for the run.
-
-The browser labels **Maeve** as the recommended path. Ciarán, Priya, and Arun are exploratory breadth cases and must not be described as independently validated legal advice.
-
-## Why this is an AI agent, not a chatbot
-
-- **MCP makes the AI inspectable.** The browser exposes a readable trace of the model's tool calls rather than asking a judge to trust a fluent answer.
-- **Models never own decisive calculations.** Dates, diffs, effective-date selection, threshold checks, arithmetic, action ordering, and evidence outcomes are deterministic Python.
-- **Rules live in data.** Domain packs define sources, obligations, scoping, triggers, obligation-level predicates, and evidence rules.
-- **Missing material facts fail closed.** An incomplete threshold or event becomes `indeterminate`; COURSE creates no action.
-- **Pack scope is not obligation scope.** COMPASS can confirm that a rule family is relevant while PLOT rules individual duties in, out, or indeterminate.
-- **History is inspectable.** Every agent writes to ATLAS, an append-only JSONL chain with linked hashes.
-
-## Current evidence
-
-At the latest verification:
-
-- **115 automated tests pass**.
-- **8 executable acceptance checks pass** in `tools/build_evaluation_card.py`.
-- **9 domain packs** are loaded: six standalone packs and three declarative cross-border corridors.
-- **12 MCP tools** expose the system, including discovery for domains, sources, and prepared holdings.
-- The browser demo defaults to a server-side OpenAI orchestrator and an inspectable MCP trace; deterministic calculation and labelled replay provide fallback layers.
-- Replay output is generated from real API responses for network-safe presentation fallback.
-
-
-
-### Open band — what the rule says
-
-| Agent | Responsibility |
-|---|---|
-| **SURVEY** | Compare named source snapshots and report provision-level changes with hashes. |
-| **LEGEND** | Turn source provisions into discrete, citable obligations. |
-| **ALMANAC** | Version the obligation graph and record supersession. |
-
-### Tenant band — what the rule means for one case
-
-| Agent | Responsibility |
-|---|---|
-| **COMPASS** | Decide whether a pack is in scope: `CONFIRMED`, `EXEMPT`, or `INDETERMINATE`. |
-| **PLOT** | Evaluate each obligation's effective date, instrument, event, threshold, trigger, and prior closure. |
-| **COURSE** | Convert actionable gaps into owned, dependency-ordered work with before/on/after date semantics. |
-| **ANCHOR** | Validate submitted evidence against type, fields, rate, arithmetic, and timing rules. |
-| **MERIDIAN** | Run standalone packs and eligible corridor packs against the same holding, then consolidate. |
-| **ATLAS** | Preserve the end-to-end, hash-linked decision trace. |
-
-## Domain coverage
-
-The project loads six standalone packs:
-
-1. Irish fund taxation and eight-year deemed disposal (`tax`)
-2. Indian foreign-asset and foreign-income disclosure (`india-fa`)
-3. US foreign-account and foreign-asset reporting (`us-fbar`)
-4. Irish residence-permit registration and renewal (`ireland-irp`)
-5. Irish capital-gains tax on property (`ireland-cgt-property`)
-6. Indian NRI listed-securities capital gains (`india-nri-securities`)
-
-It also synthesizes three corridor packs from `domains/interactions.yaml`:
-
-- India–Ireland
-- India–United States
-- Ireland–United States
-
-Coverage is **selected prototype coverage**, not comprehensive compliance clearance.
-
-## Obligation-level safety
-
-A pack-level determination is intentionally coarse. For example, a US tax resident may place the US pack in scope, but that alone must not create FBAR, Form 8938, Form 3520, and Form 8621 actions for every asset.
-
-Each `ObligationSpec` can therefore declare:
-
-- `effective_from` and `effective_to`
-- `applies_when` predicates using deterministic operators such as `equals`, `in`, `gt`, and `lte`
-
-PLOT reports one of:
-
-| State | Meaning | Opens an action? |
-|---|---|---|
-| `satisfied` | Matching evidence already closed this event. | No |
-| `partial` | Applicable; event is upcoming. | Yes |
-| `absent` | Applicable; evidence is not recorded. | Yes |
-| `not_applicable` | A specific condition is false. | No |
-| `indeterminate` | A material fact is missing or incompatible. | No |
-
-## Repository map
-
-```text
-domains/                         cited rules, scope, triggers, and evidence contracts
-data/sources/                     controlled v1/v2 source snapshots
-registers/holder_register.json    synthetic test register
-tara/core/                        dates, diffs, pack and corridor loaders
-tara/agents/                      the nine agents
-tara/atlas/                       append-only hash-linked ledger
-tara/mcp_server/                  twelve MCP tools over stdio or streamable HTTP
-tara/orchestrator/                deterministic and optional LLM clients
-tara/pipeline.py                  band-order-enforcing orchestration
-demo/                             FastAPI adapter, browser UI, presets, replay
-tests/                            unit, integration, safety, and end-to-end tests
-tools/build_evaluation_card.py    executable public acceptance report
-docs/tara-project-guide.html      canonical visual and technical walkthrough
-public-release-manifest.txt       allowlist for clean public publication
-```
+| Domain coverage | Nine domain packs: six standalone packs and three cross-border corridors. |
+| Agent contracts | Nine named components across source change, applicability, actions, evidence, cross-border consolidation, and audit. |
+| Integration surface | Twelve MCP tools for discovery and controlled execution. |
+| Verification | 115 automated tests covering unit, integration, safety, and end-to-end behaviour. |
+| Demo data | Synthetic prepared profiles and controlled source snapshots only. |
+| Audit trace | ATLAS append-only, hash-linked JSONL records for each run. |
 
 ## Run locally
 
@@ -144,94 +42,40 @@ pip install -e '.[dev]'
 pip install -r demo/requirements.txt
 
 pytest -q
-python tools/build_evaluation_card.py
 python -m uvicorn demo.api:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000`, choose **Maeve**, and follow the source change to the evidence check.
+Open `http://127.0.0.1:8000` to run the browser demo. Set `OPENAI_API_KEY` in the server environment to enable the LLM-first path. Without it, the demo clearly uses its deterministic control path.
 
-## MCP interface
+## Repository map
+
+```text
+domains/                   cited rules, scope, triggers, and evidence contracts
+data/sources/              controlled source snapshots
+registers/                 synthetic holder register and source registry
+tara/                      agents, deterministic pipeline, MCP server, and orchestration
+demo/                      FastAPI adapter, browser UI, presets, and replay support
+tests/                     unit, integration, safety, and end-to-end coverage
+tools/                     developer utilities and clean public-release builder
+docs/connecting-ai-clients.md  local MCP client integration guidance
+```
+
+## MCP server
+
+Run the local MCP server over stdio:
 
 ```bash
 python -m tara.cli serve
 ```
 
-TARA exposes twelve tools:
+TARA exposes twelve tools: domain, source, and holding discovery; source-change detection; obligation decomposition and versioning; applicability and gap checks; action planning; evidence verification; cross-border consolidation; and trace reconstruction.
 
-- `list_domains`
-- `list_sources`
-- `list_holdings`
-- `survey_detect_change`
-- `legend_decompose`
-- `almanac_refresh`
-- `compass_assess`
-- `plot_align`
-- `course_plan`
-- `anchor_verify`
-- `meridian_survey`
-- `atlas_reconstruct`
+For local client configuration, see [Connecting an AI client to TARA's MCP server](docs/connecting-ai-clients.md).
 
-A streamable-HTTP server is also available:
+## Operational boundaries
 
-```bash
-python -m tara.cli serve --transport streamable-http --port 8000
-```
-
-
-With the `llm` extra installed and `OPENAI_API_KEY` configured, run the real OpenAI-over-MCP path:
-
-```bash
-pip install -e '.[llm]'
-python -m tara.cli orchestrate \
-  --model gpt-4.1-mini --show-tool-calls
-```
-
-The model discovers exact domain, source, and holding IDs through MCP tools. If a required applicability fact is missing, it stops and asks for that fact rather than guessing. The browser runs the same LLM-first sequence server-side, then presents the independently derived deterministic controls and a readable MCP trace.
-
-## Demo and replay
-
-
-Regenerate replay data after changing packs, register fields, agent behavior, or presets:
-
-```bash
-python -m uvicorn demo.api:app --port 8000 &
-python demo/capture_replay.py
-```
-
-## Public release without private history
-
-The private repository remains the working source of truth. The public version is built from an explicit allowlist into a separate directory:
-
-```bash
-python tools/build_public_release.py
-```
-
-
-1. Copies only paths in `public-release-manifest.txt`.
-2. Omits `.git`, internal reviews, generated state, caches, local environments, and private working material.
-3. Scans the candidate for common secret patterns.
-4. Runs the public test and documentation checks.
-5. Produces a release manifest with file hashes.
-
-Only after human review should that directory be initialized as a new Git repository and pushed once. That keeps private commits and messages out of the public repository.
-
-## Boundaries and next evidence
-
-TARA does not yet claim:
-
-- continuous source retrieval and approval;
-- comprehensive legal coverage;
-- independent tax or legal sign-off;
-- production authentication, tenancy, encryption, or retention controls;
-- regulator acceptance of a submitted artefact; or
-- external traction or a signed design partner.
-
-
-## Presentation guidance
-
-Lead with the concrete failure: **an internally consistent 41% calculation is wrong for a 2026 event**. Show the **AI/MCP trace** first to establish the agent story, then show **What changed**, **What applies**, the **Action plan**, the evidence that **Needs correction**, the evidence that is **Accepted**, and the **Proof record**. Explain the deterministic safety boundary in one sentence: *the model chooses tools; TARA decides dates, calculations, and evidence outcomes.*
-
+TARA does not claim continuous source retrieval, comprehensive legal coverage, independent professional sign-off, production identity or tenancy controls, durable production storage, or regulator acceptance of an artefact. Do not submit real personal, legal, tax, immigration, financial, or filing data to the public demo.
 
 ## License
 
-TARA is released under the [MIT License](LICENSE). The regulatory content and demo outputs remain a bounded prototype and do not constitute legal, tax, immigration, or filing advice.
+TARA is released under the [MIT License](LICENSE).

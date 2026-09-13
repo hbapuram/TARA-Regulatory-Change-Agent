@@ -198,7 +198,7 @@ def _arithmetic_checkable(artefact: dict[str, Any]) -> bool:
     A pack that wants the cross-check enforced makes it enforceable by
     listing the operands in its own ``required_fields``; that keeps the
     decision in the domain pack, where this architecture puts every other
-    domain judgement. See the known-limitation note in the health report:
+    domain rule. See the known-limitation note in the health report:
     the operand *names* here are still hard-coded rather than declared in
     YAML, which is the remaining half of this fix.
     """

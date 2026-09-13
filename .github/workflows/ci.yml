@@ -28,7 +28,5 @@ jobs:
         run: pytest -q
       - name: Browser script syntax
         run: node --check demo/app.js
-      - name: Evaluation acceptance checks
-        run: python tools/build_evaluation_card.py
       - name: Public-release dry run
         run: python tools/build_public_release.py --output /tmp/tara-public-release

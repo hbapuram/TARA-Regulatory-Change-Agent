@@ -26,7 +26,7 @@ function defaultApi() {
 const S = {
   api: defaultApi(),
   mode: "checking",           // checking | live | replay
-  aiPreference: "llm",         // llm | backup; LLM is the default judge path
+  aiPreference: "llm",         // llm | backup; LLM is the default interactive path
   aiAvailable: false,
   aiInfo: null,
   orchestration: null,
@@ -45,7 +45,7 @@ const S = {
   artefact: null,
   closure: null,
   verification: null,          // server-returned ANCHOR trace for the latest submission
-  checklist: {},              // action_id -> explicit true/false, overriding PLAYBOOK_ASSUMPTIONS
+  checklist: {},              // action_id -> explicit true/false, overriding ACTION_PLAN_ASSUMPTIONS
   asOf: (REPLAY && REPLAY.as_of) || new Date().toISOString().slice(0, 10)
 };
 
@@ -53,9 +53,9 @@ const S = {
 // the holder's own account of their situation — "even if these are static
 // examples, make it accommodating of that". Keyed by obligation_id (an
 // obligation recurs across every holding it is confirmed on, so this is not
-// keyed by action_id); the Playbook pre-checks any step whose obligation_id
+// keyed by action_id); the action plan pre-checks any step whose obligation_id
 // appears here, with a note explaining why, and the checkbox stays editable.
-const PLAYBOOK_ASSUMPTIONS = {
+const ACTION_PLAN_ASSUMPTIONS = {
   priya: {
     obligation_ids: ["OBL-CORR-001"],
     note: "Assumed already done, per Priya's own account of her situation: her Indian bank accounts have already been changed to the appropriate non-resident account status, and she has already declared herself a Non-Resident Indian in her Indian tax filings. Uncheck any step below that is not actually done yet."
@@ -392,7 +392,7 @@ function go(i) {
   S.leg = i;
   window.scrollTo({ top: 0, behavior: "smooth" });
   render();
-  // The pitch route is case → parallel scan, but the technical source chart
+// The guided route is case → parallel scan, but the technical source chart
   // remains available. Either route starts the exact same real pipeline run.
   if (i >= 3 && !S.run && !S.busy) doRun();
 }
@@ -472,7 +472,6 @@ function bandsSvg() {
 }
 
 function stageBrief() {
-  const guideUrl = (S.api || "https://tara-demo.onrender.com") + "/guide";
   const engineNote =
     S.mode === "live" && S.aiPreference === "llm" && S.aiAvailable
       ? `<div class="note"><b>AI/MCP walkthrough is ready.</b> An OpenAI model will choose TARA's MCP tools, then deterministic controls will validate the rule, date, calculation, and evidence.</div>`
@@ -510,7 +509,6 @@ function stageBrief() {
       </div>
       <div class="nav">
         <button class="btn" id="begin" type="button" ${S.presetId ? "" : "disabled"}>Start the walkthrough →</button>
-        <a class="btn ghost" href="${esc(guideUrl)}" target="_blank" rel="noopener">Open the full project guide ↗</a>
         <span class="hint">${S.presetId ? ((S.presets.find(p => p.id === S.presetId) || {}).start_stage === 3 ? "You will begin with the rule change, then follow it through to accepted evidence." : "You will begin with the result; the case facts remain available in the navigation.") : "Choose a case to continue."}</span>
       </div>
     </div>`;
@@ -890,10 +888,10 @@ function stageInterview() {
 }
 
 // ---------------------------------------------------------------------------
-// the Playbook: obligation -> source link -> numbered steps -> checklist
+// the action plan: obligation -> source link -> numbered steps -> checklist
 // ---------------------------------------------------------------------------
 
-// Every field the Playbook renders — the citation, the source URL, the step
+// Every field the action plan renders — the citation, the source URL, the step
 // text, the deadline, the suggested figures — is read straight off S.run.
 // Nothing here computes a determination, a rate or a deadline; it only
 // groups and orders what PLOT/COURSE/LEGEND already produced, exactly the
@@ -975,10 +973,10 @@ function stageActions() {
   if (!S.run) return busyPanel("Waiting…");
   const acts = S.run.actions;
 
-  // A legal duty can be triggered by several holdings. The pitch view shows
+  // A legal duty can be triggered by several holdings. The action view shows
   // that duty once, names every affected holding, and preserves the individual
   // actions for ANCHOR. This stops one corridor rule from becoming three
-  // visually identical cards before a judge gets to the actual finding.
+  // visually identical cards before a reviewer reaches the actual finding.
   const groups = new Map();
   acts.forEach(a => {
     if (!groups.has(a.domain_id)) groups.set(a.domain_id, []);
@@ -1027,7 +1025,7 @@ function stageActions() {
       </div>`;
     }).join("");
 
-    return `<div class="card pad stack playbook-card">
+    return `<div class="card pad stack action-plan-card">
       <div class="phead">
         <div>
           <span class="ptitle">${esc(domainLabel(domainId, pack.title))}</span>
@@ -1049,7 +1047,7 @@ function stageActions() {
       <div class="pad">${corridors.map(corridorRow).join("")}</div>
     </details>` : "";
 
-  const assumption = PLAYBOOK_ASSUMPTIONS[S.presetId];
+  const assumption = ACTION_PLAN_ASSUMPTIONS[S.presetId];
 
   return `<header>
       <span class="eyebrow">Step 7 of 9 · Action plan</span>
@@ -1239,7 +1237,7 @@ function applyPreset(id) {
 }
 
 function assumedObligationIds() {
-  const a = PLAYBOOK_ASSUMPTIONS[S.presetId];
+  const a = ACTION_PLAN_ASSUMPTIONS[S.presetId];
   return a ? a.obligation_ids : [];
 }
 

@@ -117,7 +117,6 @@ def run_quality_gates(output: Path) -> None:
         check=True,
     )
     subprocess.run(["node", "--check", "demo/app.js"], cwd=output, check=True)
-    subprocess.run(["python3", "tools/build_evaluation_card.py"], cwd=output, env=env, check=True)
 
 
 def write_hashes(output: Path) -> None:
@@ -140,7 +139,6 @@ contains no private repository history.
 ## What the release process checked
 
 - The canonical test suite passed inside this clean snapshot.
-- The executable evaluation card was regenerated from the snapshot.
 - JavaScript syntax checks passed.
 - Common secret patterns and generated private state were excluded.
 - `RELEASE_MANIFEST.sha256` records a digest for every released file.

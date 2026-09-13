@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tara"
 version = "0.1.0"
-description = "TARA — Tax, Assets & Residency Advisor. Cross-border individual asset compliance, built for TechIreland National AI Challenge 23 (Regulatory Change-to-Action Agent)."
+description = "TARA — Regulatory Change to Action. A prototype for source-governed, case-specific compliance workflows."
 requires-python = ">=3.10"
 dependencies = [
     "pyyaml>=6.0",

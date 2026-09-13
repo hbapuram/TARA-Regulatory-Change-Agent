@@ -1,4 +1,4 @@
-# One path per line, relative to the private repository root.
+# One path per line, relative to the repository root.
 # Only these paths are copied into the clean public release candidate.
 .github/workflows/ci.yml
 .dockerignore
@@ -11,17 +11,8 @@ README.md
 SECURITY.md
 apps
 data/sources
-deck-research
 demo
 deploy
-docs/index.html
-docs/demo
-docs/tara-project-guide.html
-docs/agent-walkthrough.html
-docs/agent-walkthrough2.md
-docs/evaluation-card.md
-docs/judge-slide-checklist.md
-docs/competition-truth-sheet.md
 docs/connecting-ai-clients.md
 docs/reliability-notes.md
 domains
@@ -33,10 +24,9 @@ requirements.txt
 tara
 tests
 tools/build_dashboard.py
+tools/build_public_release.py
 tools/build_source_registry.py
 tools/dashboard_template.html
 tools/export_demo_data.py
 tools/source_registry_template.html
-tools/build_evaluation_card.py
-tools/build_public_release.py
 public-release-manifest.txt
