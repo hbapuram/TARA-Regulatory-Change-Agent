@@ -164,6 +164,10 @@ main { min-width: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 12px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap: 12px; }
 .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 12px; }
+.mcp-trace { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 7px; }
+.mcp-trace li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 7px; padding: 7px 8px; border: 1px solid var(--rule); background: var(--paper); border-radius: 5px; font-size: var(--step--1); }
+.mcp-trace li > span { width: 19px; height: 19px; display: grid; place-items: center; border-radius: 50%; background: var(--verdigris-b); color: var(--verdigris); font: 500 .625rem var(--mono); }
+.mcp-trace li em { font-style: normal; color: var(--verdigris); font-size: .6875rem; white-space: nowrap; }
 
 /* open band gets the buff of charted land — the ground everyone stands on */
 .openband { background: var(--shoal); border-color: color-mix(in srgb, var(--shoal-ink) 25%, transparent); }
@@ -391,6 +395,7 @@ svg.bands { width: 100%; height: auto; max-width: 100%; display: block; }
       <span class="engine" id="engine"><span class="dot"></span><b id="engineLabel">connecting</b>
         <span class="endpoint" id="engineEndpoint"></span></span>
       <span class="spacer"></span>
+      <button class="tbtn" id="btnAiMode" type="button">AI/MCP: checking</button>
       <button class="tbtn" id="btnEngine" type="button">Connection</button>
       <button class="tbtn" id="btnRestart" type="button">Restart</button>
     </div>

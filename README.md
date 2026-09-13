@@ -58,7 +58,7 @@ The browser labels **Maeve** as the recommended path. Ciarán, Priya, and Arun a
 
 At the latest verification:
 
-- **112 automated tests pass**.
+- **115 automated tests pass**.
 - **8 executable acceptance checks pass** in `tools/build_evaluation_card.py`.
 - **9 domain packs** are loaded: six standalone packs and three declarative cross-border corridors.
 - **12 MCP tools** expose the system, including discovery for domains, sources, and prepared holdings.

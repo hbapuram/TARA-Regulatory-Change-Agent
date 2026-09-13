@@ -258,7 +258,7 @@
     <div><div class="fact-k">Agents</div><div class="fact-v">9</div></div>
     <div><div class="fact-k">Domain packs</div><div class="fact-v">9</div></div>
     <div><div class="fact-k">MCP tools</div><div class="fact-v">10</div></div>
-    <div><div class="fact-k">Automated tests</div><div class="fact-v good">112 passing</div></div>
+    <div><div class="fact-k">Automated tests</div><div class="fact-v good">115 passing</div></div>
     <div><div class="fact-k">Acceptance checks</div><div class="fact-v good">8 passing</div></div>
   </div>
 </div></div>
@@ -399,7 +399,7 @@
 <span class="n">tara/agents/</span>                   <span class="c"># one narrow module per agent</span>
 <span class="n">tara/core/</span>                     <span class="c"># dates, diffs, pack and interaction loaders</span>
 <span class="n">tara/pipeline.py</span>               <span class="c"># enforces agent order</span>
-<span class="n">tara/mcp_server/</span>               <span class="c"># ten discoverable tools</span>
+<span class="n">tara/mcp_server/</span>               <span class="c"># twelve discoverable tools</span>
 <span class="n">tara/atlas/</span>                    <span class="c"># append-only hash-linked ledger</span>
 <span class="n">demo/</span>                          <span class="c"># server-side LLM orchestration + MCP trace + browser backup</span>
 <span class="n">tests/</span>                         <span class="c"># unit, integration, safety, and end-to-end tests</span>
@@ -426,7 +426,7 @@
 <section id="evidence">
   <h2><span class="num">10</span>Evidence judges can reproduce</h2>
   <p class="lede">Claims are strongest when a reviewer can run them without trusting the pitch.</p>
-  <div class="stats-strip"><div class="stat-tile"><div class="stat-v">112</div><div class="stat-k">tests</div></div><div class="stat-tile"><div class="stat-v">8</div><div class="stat-k">acceptance checks</div></div><div class="stat-tile"><div class="stat-v">9</div><div class="stat-k">domain packs</div></div><div class="stat-tile"><div class="stat-v">1</div><div class="stat-k">tested judge path</div></div></div>
+  <div class="stats-strip"><div class="stat-tile"><div class="stat-v">115</div><div class="stat-k">tests</div></div><div class="stat-tile"><div class="stat-v">8</div><div class="stat-k">acceptance checks</div></div><div class="stat-tile"><div class="stat-v">9</div><div class="stat-k">domain packs</div></div><div class="stat-tile"><div class="stat-v">1</div><div class="stat-k">tested judge path</div></div></div>
   <p class="prose"><code>python tools/build_evaluation_card.py</code> executes the source-change, effective-date, evidence, false-positive, missing-fact, directional-deadline, and audit-chain checks and rewrites <code>docs/evaluation-card.md</code>. It is not a hand-maintained scorecard.</p>
   <div class="keynote"><h4>Current readiness</h4><p>The internal estimate is <b>87/100</b>. The project is now in the requested 85–90 range on an evidence-based internal rubric. This is not an official competition score, and it deliberately withholds points for external user validation and independent professional review.</p></div>
 </section>
@@ -451,7 +451,7 @@ pytest -q
 python tools/build_evaluation_card.py
 python -m uvicorn demo.api:app --host 127.0.0.1 --port 8000</pre><p>Open <code>http://127.0.0.1:8000</code>, choose Maeve, and follow the source change to evidence verification.</p></div></details>
   <details class="tech"><summary>Clean public release</summary><div class="tech-body"><p>The private repository remains the working history. <code>tools/build_public_release.py</code> copies only paths in <code>public-release-manifest.txt</code> into a separate directory, rejects secrets and internal files, and initializes no Git history. After final review, create a new public repository and make one release commit from that directory. The private commits and messages are never transferred.</p></div></details>
-  <details class="tech"><summary>Likely judge questions</summary><div class="tech-body"><ul><li><b>Where is the AI?</b> The default browser path makes a server-side OpenAI call. The model discovers and sequences TARA's MCP tools; the screen shows the resulting tool trace.</li><li><b>Why MCP?</b> One discoverable interface lets the model and third-party clients use the same guarded tools, rather than a hidden prompt-only workflow.</li><li><b>How do you prevent hallucination?</b> The model must use returned IDs; controlled source snapshots, explicit pack rules, fail-closed missing facts, deterministic calculations, and an audit chain constrain the result.</li><li><b>What is validated?</b> The Maeve source-to-action loop, the AI/MCP path, and 112 automated tests. Independent domain sign-off remains pending.</li><li><b>How does it scale?</b> Add a reviewed data pack; the MCP discovery and deterministic controls remain unchanged.</li></ul></div></details>
+  <details class="tech"><summary>Likely judge questions</summary><div class="tech-body"><ul><li><b>Where is the AI?</b> The default browser path makes a server-side OpenAI call. The model discovers and sequences TARA's MCP tools; the screen shows the resulting tool trace.</li><li><b>Why MCP?</b> One discoverable interface lets the model and third-party clients use the same guarded tools, rather than a hidden prompt-only workflow.</li><li><b>How do you prevent hallucination?</b> The model must use returned IDs; controlled source snapshots, explicit pack rules, fail-closed missing facts, deterministic calculations, and an audit chain constrain the result.</li><li><b>What is validated?</b> The Maeve source-to-action loop, the AI/MCP path, and 115 automated tests. Independent domain sign-off remains pending.</li><li><b>How does it scale?</b> Add a reviewed data pack; the MCP discovery and deterministic controls remain unchanged.</li></ul></div></details>
   <ol class="takeaways"><li><b>Lead with one result.</b> 41%→38%, selected by event date.</li><li><b>Show the failure.</b> A wrong-but-consistent 41% calculation is returned.</li><li><b>Show the proof.</b> Open ATLAS and the evaluation card.</li><li><b>Label the boundary.</b> Synthetic data, controlled sources, human review required.</li><li><b>End with the platform.</b> Nine packs and ten tools demonstrate reusable architecture after the golden path earns trust.</li></ol>
 </section>
 

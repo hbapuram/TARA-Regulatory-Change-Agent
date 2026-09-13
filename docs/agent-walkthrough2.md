@@ -65,7 +65,7 @@ PLOT can return `satisfied`, `partial`, `absent`, `not_applicable`, or `indeterm
 - A captured-response replay for venue reliability.
 - Deterministic source diffs, date calculations, applicability checks, and evidence validation.
 - A hash-linked proof record.
-- 112 passing automated tests.
+- 115 passing automated tests.
 - Eight executable acceptance checks in `tools/build_evaluation_card.py`.
 
 ## What is not claimed

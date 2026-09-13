@@ -26,6 +26,11 @@ function defaultApi() {
 const S = {
   api: defaultApi(),
   mode: "checking",           // checking | live | replay
+  aiPreference: "llm",         // llm | backup; LLM is the default judge path
+  aiAvailable: false,
+  aiInfo: null,
+  orchestration: null,
+  aiFallbackMessage: null,
   leg: 0,
   presetId: null,
   presets: [],
@@ -110,10 +115,22 @@ async function detectEngine() {
       const t = setTimeout(() => ctl.abort(), 8000);
       const res = await fetch(S.api + "/api/health", { signal: ctl.signal });
       clearTimeout(t);
-      if (res.ok) { S.mode = "live"; return; }
+      if (res.ok) {
+        S.mode = "live";
+        try {
+          S.aiInfo = await api("/api/ai/status");
+          S.aiAvailable = !!S.aiInfo.available;
+        } catch (e) {
+          S.aiAvailable = false;
+          S.aiInfo = null;
+        }
+        return;
+      }
     } catch (e) { /* fall through to replay */ }
   }
   S.mode = REPLAY ? "replay" : "none";
+  S.aiAvailable = false;
+  S.aiInfo = null;
 }
 
 async function loadPresets() {
@@ -128,12 +145,27 @@ async function loadPresets() {
 }
 
 async function doRun() {
-  S.busy = true; S.error = null; render();
+  S.busy = true; S.error = null; S.orchestration = null; S.aiFallbackMessage = null; render();
   try {
     if (S.mode === "live") {
-      S.run = await api("/api/run", {
+      const payload = {
         holder: S.holder, holdings: S.holdings, answers: S.answers, as_of: S.asOf
-      });
+      };
+      if (S.aiPreference === "llm" && S.aiAvailable) {
+        try {
+          const out = await api("/api/ai/run", payload);
+          S.run = out.run;
+          S.orchestration = out.orchestration;
+        } catch (aiError) {
+          S.run = await api("/api/run", payload);
+          S.aiFallbackMessage = "The AI coordinator was unavailable for this request, so TARA used its deterministic backup. The same rule, date, calculation, and evidence controls still apply.";
+        }
+      } else {
+        S.run = await api("/api/run", payload);
+        if (S.aiPreference === "llm") {
+          S.aiFallbackMessage = "AI orchestration is not configured on this service, so TARA is using its deterministic backup.";
+        }
+      }
     } else {
       if (!profileIsPristine()) throw new Error("CUSTOM");
       const hit = REPLAY && REPLAY.runs[answersKey(S.presetId, S.answers)];
@@ -372,10 +404,21 @@ function renderChrome() {
   const e = $("#engine");
   e.className = "engine " + (S.mode === "live" ? "live" : S.mode === "replay" ? "replay" : "");
   $("#engineLabel").textContent =
-    S.mode === "live" ? "live calculation" : S.mode === "replay" ? "backup replay" : S.mode === "checking" ? "connecting" : "offline";
+    S.mode === "live" && S.orchestration ? "AI + MCP run"
+    : S.mode === "live" && S.aiPreference === "llm" && S.aiAvailable ? "AI / MCP ready"
+    : S.mode === "live" ? "deterministic backup"
+    : S.mode === "replay" ? "backup replay" : S.mode === "checking" ? "connecting" : "offline";
   $("#engineEndpoint").textContent =
-    S.mode === "live" ? S.api.replace(/^https?:\/\//, "")
+    S.mode === "live" ? `${S.aiPreference === "llm" && S.aiAvailable ? "LLM-first · " : "rules-only · "}${S.api.replace(/^https?:\/\//, "")}`
     : S.mode === "replay" ? "recorded " + (REPLAY ? REPLAY.captured_at : "") : "";
+  const modeButton = $("#btnAiMode");
+  if (modeButton) {
+    modeButton.textContent = S.aiPreference === "llm" ? "AI/MCP: on" : "Deterministic backup";
+    modeButton.disabled = S.mode !== "live" && S.aiPreference === "llm";
+    modeButton.title = S.aiPreference === "llm"
+      ? "The LLM orchestrator is the default. Click to use the deterministic backup."
+      : "The deterministic backup is selected. Click to return to the LLM/MCP path.";
+  }
 
   $("#passage").innerHTML = LEGS.map((l, i) => {
     const on = i === S.leg, done = i < S.leg && legEnabled(i);
@@ -431,25 +474,27 @@ function bandsSvg() {
 function stageBrief() {
   const guideUrl = (S.api || "https://tara-demo.onrender.com") + "/guide";
   const engineNote =
-    S.mode === "live"
-      ? `<div class="note"><b>Live calculation is ready.</b> The results in this walkthrough are being generated now from the prepared case.</div>`
+    S.mode === "live" && S.aiPreference === "llm" && S.aiAvailable
+      ? `<div class="note"><b>AI/MCP walkthrough is ready.</b> An OpenAI model will choose TARA's MCP tools, then deterministic controls will validate the rule, date, calculation, and evidence.</div>`
+      : S.mode === "live"
+      ? `<div class="note"><b>Deterministic backup is ready.</b> This runs the same controlled rule, date, calculation, and evidence checks without an LLM call.</div>`
       : S.mode === "replay"
       ? `<div class="warn"><b>The live service is unavailable, so TARA has switched to a prepared backup.</b> The backup contains results captured from the same workflow on ${esc(REPLAY ? REPLAY.captured_at : "")}.</div>`
       : `<div class="warn">The calculation service and its backup are unavailable.</div>`;
 
   return `<header>
       <span class="eyebrow">A regulatory change-to-action prototype</span>
-      <h2>A rule changed. TARA makes the next step clear.</h2>
+      <h2>An LLM coordinates the work. TARA keeps the decision safe.</h2>
       <p class="lede">Regulatory updates are difficult to read, compare, and apply to a real person. TARA shows what
-      changed, who may be affected, what they should do next, and what evidence a human reviewer should check.</p>
+      changed, which controlled checks apply, what a person should do next, and what evidence a human reviewer should check.</p>
     </header>
     <div class="stack">
       ${engineNote}
       <div class="note compact"><b>Prototype boundary:</b> this uses prepared examples and controlled source snapshots. It supports a qualified reviewer; it does not replace legal, tax, immigration, or filing advice.</div>
       <div class="journey" aria-label="Demo journey">
-        <div class="journey-step"><span>1</span><div><b>Understand the change</b><p>See the old rule and the new rule side by side.</p></div></div>
-        <div class="journey-step"><span>2</span><div><b>Get a clear action plan</b><p>See what applies to this person and what to do next.</p></div></div>
-        <div class="journey-step"><span>3</span><div><b>Check the evidence</b><p>Watch TARA reject the old 41% rate and accept 38%.</p></div></div>
+        <div class="journey-step"><span>1</span><div><b>AI finds the right tools</b><p>The LLM uses MCP to discover the source and case.</p></div></div>
+        <div class="journey-step"><span>2</span><div><b>TARA validates the result</b><p>Rules code checks dates, applicability, and calculations.</p></div></div>
+        <div class="journey-step"><span>3</span><div><b>A human can review proof</b><p>Watch TARA reject 41% and accept 38% with a record.</p></div></div>
       </div>
 
       <div>
@@ -561,6 +606,42 @@ function busyPanel(msg) {
     <span class="spin"></span><span>${esc(msg)}</span></div>`;
 }
 
+function orchestrationPanel() {
+  if (S.orchestration) {
+    const labels = {
+      list_domains: "Mapped the available rule areas",
+      list_sources: "Found the controlled regulatory source",
+      list_holdings: "Located the prepared case item",
+      survey_detect_change: "Compared the old and current source text",
+      compass_assess: "Checked whether the rule applies",
+      plot_align: "Aligned requirements to the event date",
+      course_plan: "Created the dated action plan",
+      anchor_verify: "Checked submitted evidence",
+      meridian_survey: "Checked linked jurisdictions",
+      atlas_reconstruct: "Read the proof record"
+    };
+    const trace = (S.orchestration.tool_trace || []).map((step, i) =>
+      `<li><span>${i + 1}</span><b>${esc(labels[step.tool] || titleCase(step.tool))}</b><em>${esc(step.status)}</em></li>`
+    ).join("");
+    return `<section class="card pad stack openband" aria-label="AI and MCP orchestration">
+      <div><span class="eyebrow">AI orchestration · MCP</span><h3>How the LLM investigated this case</h3></div>
+      <p class="reason">${esc(S.orchestration.summary || "The LLM completed a tool-guided review.")}</p>
+      <ol class="mcp-trace">${trace}</ol>
+      <p class="hint"><b>Safety boundary:</b> the model selects and calls tools. TARA's deterministic controls decide dates, rates, calculations, and evidence outcomes.</p>
+      <details class="technical-details"><summary>Technical MCP trace</summary>
+        <p>Model: <code>${esc(S.orchestration.model || "configured model")}</code></p>
+        <div class="ledger">${(S.orchestration.tool_trace || []).map(step =>
+          `<div><span class="ag">${esc(step.tool)}</span><span class="sp">${esc(JSON.stringify(step.arguments || {}))}</span></div>`
+        ).join("")}</div>
+      </details>
+    </section>`;
+  }
+  if (S.aiFallbackMessage) {
+    return `<div class="warn"><b>Deterministic backup used.</b> ${esc(S.aiFallbackMessage)} Use the <b>AI/MCP</b> button above to try the AI path again when it is available.</div>`;
+  }
+  return "";
+}
+
 function errorPanel() {
   if (S.error === "custom") {
     return `<div class="warn"><b>This profile has been edited, and no live engine is reachable.</b>
@@ -588,7 +669,7 @@ function diffSides(text) {
 
 function stageChart() {
   if (S.busy) return `<header><span class="eyebrow">Step 4 of 9 · What changed</span><h2>Comparing the old and new source</h2></header>
-    ${busyPanel("TARA is checking the source snapshots and identifying the exact change…")}`;
+    ${busyPanel(S.aiPreference === "llm" && S.aiAvailable ? "The LLM is selecting MCP tools while TARA validates the source change…" : "TARA is checking the source snapshots and identifying the exact change…")}`;
   if (S.error) return `<header><span class="eyebrow">Step 4 of 9 · What changed</span><h2>The source comparison</h2></header>
     <div class="stack">${errorPanel()}<div class="nav">
       <button class="btn ghost" data-goto="2" type="button">← Back</button>
@@ -596,6 +677,12 @@ function stageChart() {
   if (!S.run) return busyPanel("Starting…");
 
   const ob = S.run.open_band;
+  const aiHeadline = S.orchestration
+    ? "The LLM found the right path. TARA checked the change."
+    : "TARA checked the change using its deterministic backup.";
+  const aiLede = S.orchestration
+    ? "The LLM uses MCP to locate the relevant source and case. TARA then compares the controlled snapshots and shows why the verified change matters for this example."
+    : "The AI coordinator is off or unavailable, so TARA is using the same controlled snapshots and deterministic checks to show why the verified change matters for this example.";
   const totalObl = Object.values(ob).reduce((n, p) => n + p.obligations.length, 0);
   const totalSrc = Object.values(ob).reduce((n, p) => n + p.sources.length, 0);
   const changed = Object.values(ob).flatMap(p => p.sources).filter(s => s.changes.length).length;
@@ -645,8 +732,8 @@ function stageChart() {
 
   return `<header>
       <span class="eyebrow">Step 4 of 9 · What changed</span>
-      <h2>TARA found the exact rule change</h2>
-      <p class="lede">Instead of asking a person to compare long documents, TARA shows the old wording, the new wording, and why the change matters for this example.</p>
+      <h2>${aiHeadline}</h2>
+      <p class="lede">${aiLede}</p>
     </header>
     <div class="stack">
       <div class="grid3">
@@ -654,6 +741,7 @@ function stageChart() {
         <div class="tile"><div class="n">${Object.keys(ob).length}</div><div class="l">rule areas checked</div></div>
         <div class="tile"><div class="n">${totalSrc}</div><div class="l">source sets compared</div></div>
       </div>
+      ${orchestrationPanel()}
       ${changedCards || `<div class="note"><b>No source change was found in the stored snapshots for this example.</b></div>`}
       <details class="card matrix-details"><summary><b>See all ${Object.keys(ob).length} rule areas checked</b><span>Most did not change, so they are kept out of the main story.</span></summary>
         <ul class="coverage-list">${coverageRows}</ul>
@@ -1147,6 +1235,7 @@ function applyPreset(id) {
   S.answers = JSON.parse(JSON.stringify(p.answers || {}));
   S.run = null; S.cell = null; S.actionId = null;
   S.closure = null; S.verification = null; S.artefact = null; S.error = null; S.checklist = {};
+  S.orchestration = null; S.aiFallbackMessage = null;
 }
 
 function assumedObligationIds() {
@@ -1175,6 +1264,13 @@ document.addEventListener("click", async ev => {
   if (t.id === "again") { S.presetId = null; S.run = null; S.verification = null; go(0); return; }
   if (t.id === "btnRestart") { S.presetId = null; S.holder = null; S.holdings = []; S.run = null;
     S.answers = {}; S.closure = null; S.verification = null; S.actionId = null; go(0); return; }
+
+  if (t.id === "btnAiMode") {
+    S.aiPreference = S.aiPreference === "llm" ? "backup" : "llm";
+    S.run = null; S.orchestration = null; S.aiFallbackMessage = null; S.error = null;
+    if (S.holder && S.holdings.length && S.leg >= 3) doRun(); else render();
+    return;
+  }
 
   if (t.id === "btnEngine") {
     const url = prompt(
