@@ -138,8 +138,64 @@ def list_domains() -> dict[str, Any]:
                 "title": p.title,
                 "is_corridor": p.is_corridor,
                 "corridor": p.corridor,
+                "source_ids": list(p.sources),
             }
             for p in packs
+        ]
+    }
+
+
+@mcp.tool()
+def list_sources(domain_id: str | None = None) -> dict[str, Any]:
+    """Lists the configured regulatory sources for a domain pack.
+
+    Clients must use the returned ``source_id`` values when calling
+    ``survey_detect_change`` or ``legend_decompose``. Human descriptions such
+    as ``luxembourg_offshore_fund`` are not valid source identifiers.
+    """
+    ctx = get_context()
+    try:
+        domain_pack = _resolve_domain_pack(ctx, domain_id)
+    except ValueError as exc:
+        return {
+            "error": str(exc),
+            "hint": "Use an exact domain_id returned by list_domains; do not use a country, city, or holding name.",
+            "available_domains": list_domains()["domains"],
+        }
+    return {
+        "domain_id": domain_pack.domain_id,
+        "sources": [
+            {
+                "source_id": source.source_id,
+                "instrument": source.instrument,
+                "issuing_authority": source.issuing_authority,
+                "url": source.url,
+                "last_verified": source.last_verified,
+            }
+            for source in domain_pack.sources.values()
+        ],
+    }
+
+
+@mcp.tool()
+def list_holdings() -> dict[str, Any]:
+    """Lists the prepared holdings available to tenant assessment tools.
+
+    Clients must use the exact ``holding_id`` returned here. The response
+    contains only routing facts needed to choose a case, not private register
+    fields or conclusions.
+    """
+    ctx = get_context()
+    return {
+        "holdings": [
+            {
+                "holding_id": holding["holding_id"],
+                "holder_id": holding.get("holder_id"),
+                "instrument_type": holding.get("instrument_type"),
+                "jurisdiction": holding.get("jurisdiction"),
+                "status": holding.get("status"),
+            }
+            for holding in ctx.register.get("holdings", [])
         ]
     }
 

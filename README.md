@@ -132,7 +132,7 @@ registers/holder_register.json    synthetic test register
 tara/core/                        dates, diffs, pack and corridor loaders
 tara/agents/                      the nine agents
 tara/atlas/                       append-only hash-linked ledger
-tara/mcp_server/                  ten MCP tools over stdio or streamable HTTP
+tara/mcp_server/                  twelve MCP tools over stdio or streamable HTTP
 tara/orchestrator/                deterministic and optional LLM clients
 tara/pipeline.py                  band-order-enforcing orchestration
 demo/                             FastAPI adapter, browser UI, presets, replay
@@ -163,9 +163,11 @@ Open `http://127.0.0.1:8000`, choose **Maeve**, and follow the source change to 
 python -m tara.cli serve
 ```
 
-TARA exposes ten tools:
+TARA exposes twelve tools:
 
 - `list_domains`
+- `list_sources`
+- `list_holdings`
 - `survey_detect_change`
 - `legend_decompose`
 - `almanac_refresh`
@@ -183,6 +185,17 @@ python -m tara.cli serve --transport streamable-http --port 8000
 ```
 
 The optional LLM orchestrator is an MCP client. It can choose tools and phrase results, but the deterministic pipeline remains responsible for the consequential checks.
+
+With the `llm` extra installed and `OPENAI_API_KEY` configured, run the real OpenAI-over-MCP path:
+
+```bash
+pip install -e '.[llm]'
+python -m tara.cli orchestrate \
+  "Review holding HLD-001 in domain tax on 2026-09-13. The holder answers SQ-03=false. Identify the changed rule and next checks." \
+  --model gpt-4.1-mini --show-tool-calls
+```
+
+The model discovers exact domain, source, and holding IDs through MCP tools. If a required applicability fact is missing, it stops and asks for that fact rather than guessing. The browser demo remains deterministic and does not require an LLM or network call.
 
 ## Demo and replay
 

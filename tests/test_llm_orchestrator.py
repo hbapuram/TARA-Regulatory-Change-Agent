@@ -79,11 +79,21 @@ def test_real_mcp_client_lists_and_calls_every_tool_against_the_live_server():
                 await session.initialize()
                 listed = await session.list_tools()
                 names = {t.name for t in listed.tools}
-                assert {"list_domains", "compass_assess", "meridian_survey", "atlas_reconstruct"} <= names
+                assert {"list_domains", "list_sources", "list_holdings", "compass_assess", "meridian_survey", "atlas_reconstruct"} <= names
 
                 domains = await session.call_tool("list_domains", {})
                 text = llm._extract_text(domains)
                 assert "india-ireland-corridor" in text
                 assert not domains.is_error
+
+                sources = await session.call_tool("list_sources", {})
+                source_text = llm._extract_text(sources)
+                assert "revenue-27-01a-02" in source_text
+                assert not sources.is_error
+
+                holdings = await session.call_tool("list_holdings", {})
+                holdings_text = llm._extract_text(holdings)
+                assert "HLD-001" in holdings_text
+                assert not holdings.is_error
 
     asyncio.run(_check())

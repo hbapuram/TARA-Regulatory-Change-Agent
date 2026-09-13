@@ -33,7 +33,7 @@ def main(argv: list[str] | None = None) -> int:
 
     orchestrate_parser = subparsers.add_parser(
         "orchestrate",
-        help="Ask a question through the real OpenAI-over-MCP orchestrator (Phase 2; needs OPENAI_API_KEY).",
+        help="Ask a question through the OpenAI-over-MCP orchestrator (needs OPENAI_API_KEY).",
     )
     orchestrate_parser.add_argument("prompt", help="The question to ask, e.g. 'What does HLD-001 owe and by when?'")
     orchestrate_parser.add_argument("--model", default="gpt-4.1-mini", help="OpenAI model to use (default: gpt-4.1-mini).")
