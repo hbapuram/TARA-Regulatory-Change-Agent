@@ -53,14 +53,14 @@ const S = {
 const PLAYBOOK_ASSUMPTIONS = {
   priya: {
     obligation_ids: ["OBL-CORR-001"],
-    note: "Assumed already done, per Priya's own account of her situation: her Indian bank accounts have already been redesignated NRO/NRE, and she has already declared herself a Non-Resident Indian in her Indian tax filings. Uncheck any step below that is not actually done yet."
+    note: "Assumed already done, per Priya's own account of her situation: her Indian bank accounts have already been changed to the appropriate non-resident account status, and she has already declared herself a Non-Resident Indian in her Indian tax filings. Uncheck any step below that is not actually done yet."
   }
 };
 
 const FALLBACK_PRESETS = [{
   id:"maeve", name:"Maeve", recommended:true, start_stage:3,
-  tagline:"Recommended: one rule change, one affected holding, one verified response",
-  story:"Tested judge path: Revenue's fund-tax rate changes from 41% to 38%; TARA selects the post-2026 rule, dates the work, rejects the old rate, and records the trace.",
+  tagline:"Recommended: see one tax-rate change become a clear action plan",
+  story:"Maeve holds an offshore fund. The tax rate changes from 41% to 38%, so TARA works out which rate applies, what she needs to do, and whether her calculation is correct.",
   answers:{"SQ-03":false},
   holder:{holder_id:"H-101",name:"Maeve",citizenships:["Ireland"],tax_residencies:["Ireland"],
     tax_residency_since:"2010-01-01",eea_swiss_uk_national:true,holder_residency:"Irish tax resident"},
@@ -173,7 +173,7 @@ async function doVerify(artefact) {
     S.verification = null;
     S.error = e.message === "UNCAPTURED"
       ? "uncaptured"
-      : "ANCHOR could not be reached: " + e.message;
+      : "The evidence checker could not be reached: " + e.message;
   }
   S.busy = false; render();
 }
@@ -192,16 +192,161 @@ const titleCase = s => String(s || "").replace(/_/g, " ").replace(/^./, c => c.t
 const shortHash = h => h ? h.slice(0, 10) + "…" + h.slice(-6) : "—";
 const dayDiff = (a, b) => Math.round((new Date(a) - new Date(b)) / 86400000);
 
+const STATUS_LABELS = {
+  CONFIRMED: "Applies",
+  EXEMPT: "Does not apply",
+  INDETERMINATE: "More information needed",
+  SKIPPED: "Not relevant",
+  closed: "Accepted",
+  returned: "Needs correction"
+};
+
+const DOMAIN_LABELS = {
+  tax: "Irish offshore fund tax",
+  "ireland-cgt-property": "Irish property sale tax",
+  "ireland-irp": "Irish residence permission",
+  "india-fa": "Indian foreign asset reporting",
+  "india-nri-securities": "Indian investment gains",
+  "us-fbar": "US foreign account reporting",
+  "india-ireland-corridor": "India and Ireland tax connection",
+  "india-us-corridor": "India and US tax connection",
+  "ireland-us-corridor": "Ireland and US tax connection"
+};
+
+const EVIDENCE_LABELS = {
+  deemed_disposal_computation: "Eight-year gain calculation",
+  valuation_statement: "Valuation statement",
+  tax_computation: "Tax calculation",
+  filed_return_receipt: "Filed return and payment receipt",
+  cgt_computation: "Capital gains calculation",
+  ppr_relief_computation: "Main-home relief calculation",
+  cgt_payment_receipt: "Tax payment receipt",
+  filed_cgt_return: "Filed capital gains return",
+  cg50a_clearance_certificate: "Property tax clearance certificate",
+  irp_initial_registration: "Residence registration confirmation",
+  irp_renewal: "Residence permission renewal",
+  irp_change_of_address_notification: "Address-change confirmation",
+  schedule_fa_disclosure: "Foreign assets disclosure",
+  schedule_fsi_disclosure: "Foreign income disclosure",
+  nri_capital_gains_computation: "Indian investment gain calculation",
+  tds_certificate: "Tax deducted at source certificate",
+  filed_itr_return: "Filed Indian tax return",
+  nro_redesignation_confirmation: "Indian bank account status confirmation",
+  form_10f_and_trc: "Form 10F and tax residency certificate",
+  form_67_ftc_claim: "Foreign tax credit claim",
+  fbar_filing: "US foreign bank account report",
+  form_8938_filing: "US foreign asset report",
+  form_3520_filing: "US foreign trust or gift report",
+  form_8621_filing: "US foreign investment company report",
+  form_1116_ftc_claim: "US foreign tax credit claim",
+  ftc_substantiation_record: "Foreign tax credit supporting record"
+};
+
+const FIELD_LABELS = {
+  valuation_date: "Valuation date",
+  computed_gain: "Calculated gain",
+  deemed_gain: "Deemed gain",
+  chargeable_gain: "Chargeable gain",
+  annual_exemption_applied: "Annual exemption",
+  rate_applied: "Tax rate used",
+  computed_tax: "Calculated tax",
+  return_date: "Return date",
+  tax_paid_amount: "Tax paid",
+  reference_number: "Reference number",
+  assessment_year: "Assessment year",
+  trc_reference: "Tax residency certificate reference",
+  redesignation_date: "Account status change date",
+  account_type: "Account type"
+};
+
+const statusLabel = status => STATUS_LABELS[status] || titleCase(status);
+const domainLabel = (id, fallback) => DOMAIN_LABELS[id] || fallback || titleCase(id);
+const evidenceLabel = type => EVIDENCE_LABELS[type] || titleCase(type);
+const fieldLabel = key => FIELD_LABELS[key] || titleCase(key);
+const formatDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
+  ? new Intl.DateTimeFormat("en-IE", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value + "T00:00:00Z"))
+  : value;
+
+function holdingLabel(id) {
+  const fromRun = S.run && S.run.holdings && S.run.holdings[id] && S.run.holdings[id].holding;
+  const h = fromRun || S.holdings.find(x => x.holding_id === id);
+  return h ? `${titleCase(h.instrument_type)} in ${h.jurisdiction}` : "Case item";
+}
+
+function plainReason(reason) {
+  return String(reason || "")
+    .replace(/Artefact is responsive and evidence rules are satisfied\.?/gi,
+      "The required information is present, and the calculation matches the current rule.")
+    .replace(/rate_applied 0\.(\d+) does not match the (\d+)% rate required for [^—]+— submitting evidence at a superseded rate does not satisfy the current obligation\.?/gi,
+      (_, submitted, required) => `The submitted ${submitted}% rate is out of date. This case requires the current ${required}% rate.`)
+    .replace(/computed_tax ([\d.]+) does not equal the expected ([\d.]+)[^.]*/gi,
+      (_, submitted, expected) => `The calculated tax is ${submitted}, but the figures in this form produce ${expected}.`)
+    .replace(/missing required field:?\s*([a-z_]+)/gi, (_, key) => `Add the required field: ${fieldLabel(key)}.`)
+    .replace(/Holder is within scope on every configured scoping question\.?/gi, "The case facts match this rule.")
+    .replace(/Trigger date (\d{4}-\d{2}-\d{2}) has passed with no recorded evidence\.?/gi,
+      (_, d) => `The relevant date was ${formatDate(d)}, but no supporting evidence is recorded yet.`)
+    .replace(/The event date (\d{4}-\d{2}-\d{2}) is after this rule ceased to apply on (\d{4}-\d{2}-\d{2})\.?/gi,
+      (_, event, ended) => `This older rule does not apply: the event is ${formatDate(event)}, after it ended on ${formatDate(ended)}.`)
+    .replace(/rate_applied/gi, "tax rate")
+    .replace(/computed_tax/gi, "calculated tax")
+    .replace(/deemed_gain/gi, "deemed gain")
+    .replace(/\bOBL(?:-[A-Z0-9]+)+\b/g, "this requirement")
+    .replace(/\bINDETERMINATE\b/g, "waiting for information")
+    .replace(/\bEXEMPT\b/g, "not applicable")
+    .replace(/_/g, " ");
+}
+
+function actionTitle(action, info) {
+  const type = action.artefact_type || action.required_evidence_type;
+  const labels = {
+    deemed_disposal_computation: "Calculate the eight-year deemed gain",
+    valuation_statement: "Record the fund valuation",
+    tax_computation: action.expected_rate != null ? `Calculate tax using the current ${(action.expected_rate * 100).toFixed(0)}% rate` : "Prepare the tax calculation",
+    filed_return_receipt: "File the return and keep the payment receipt",
+    cgt_computation: "Calculate the property gain",
+    ppr_relief_computation: "Check main-home relief",
+    cgt_payment_receipt: "Pay the tax and keep the receipt",
+    filed_cgt_return: "File the capital gains return",
+    cg50a_clearance_certificate: "Obtain property tax clearance",
+    irp_initial_registration: "Complete the first residence registration",
+    irp_renewal: "Renew the residence permission",
+    irp_change_of_address_notification: "Report the address change",
+    schedule_fa_disclosure: "Report foreign assets",
+    schedule_fsi_disclosure: "Report foreign income",
+    nri_capital_gains_computation: "Calculate the Indian investment gain",
+    tds_certificate: "Collect the tax-deduction certificate",
+    filed_itr_return: "File the Indian tax return",
+    nro_redesignation_confirmation: "Confirm the Indian bank account status",
+    form_10f_and_trc: "Prepare treaty-relief documents",
+    form_67_ftc_claim: "Claim foreign tax credit",
+    fbar_filing: "File the US foreign bank account report",
+    form_8938_filing: "File the US foreign asset report",
+    form_3520_filing: "File the US foreign trust or gift report",
+    form_8621_filing: "File the US foreign investment company report",
+    form_1116_ftc_claim: "Claim the US foreign tax credit",
+    ftc_substantiation_record: "Keep proof for the foreign tax credit"
+  };
+  return labels[type] || (info && info.obligation ? info.obligation.text : evidenceLabel(type));
+}
+
+function plainVariantLabel(label) {
+  return String(label || "")
+    .replace("Reset to a valid submission", "Restore the correct example")
+    .replace(/Leave rate_applied empty/i, "Remove the tax rate")
+    .replace(/Leave return_date empty/i, "Remove the return date")
+    .replace(/Leave ([a-z_]+) empty/gi, (_, key) => `Remove ${fieldLabel(key).toLowerCase()}`);
+}
+
 const LEGS = [
-  { id: "brief",     label: "Choose case" },
-  { id: "holder",    label: "Case facts" },
-  { id: "holdings",  label: "Assets" },
-  { id: "chart",     label: "Source chart" },
-  { id: "survey",    label: "Parallel scan" },
-  { id: "interview", label: "One question" },
-  { id: "actions",   label: "Playbook" },
-  { id: "evidence",  label: "Check proof" },
-  { id: "ledger",    label: "Audit trail" }
+  { id: "brief",     label: "Start" },
+  { id: "holder",    label: "About the person" },
+  { id: "holdings",  label: "What they hold" },
+  { id: "chart",     label: "What changed" },
+  { id: "survey",    label: "What applies" },
+  { id: "interview", label: "Missing information" },
+  { id: "actions",   label: "Action plan" },
+  { id: "evidence",  label: "Check evidence" },
+  { id: "ledger",    label: "Proof record" }
 ];
 
 function legEnabled(i) {
@@ -227,7 +372,7 @@ function renderChrome() {
   const e = $("#engine");
   e.className = "engine " + (S.mode === "live" ? "live" : S.mode === "replay" ? "replay" : "");
   $("#engineLabel").textContent =
-    S.mode === "live" ? "live engine" : S.mode === "replay" ? "captured replay" : S.mode === "checking" ? "checking" : "no engine";
+    S.mode === "live" ? "live calculation" : S.mode === "replay" ? "backup replay" : S.mode === "checking" ? "connecting" : "offline";
   $("#engineEndpoint").textContent =
     S.mode === "live" ? S.api.replace(/^https?:\/\//, "")
     : S.mode === "replay" ? "recorded " + (REPLAY ? REPLAY.captured_at : "") : "";
@@ -236,7 +381,7 @@ function renderChrome() {
     const on = i === S.leg, done = i < S.leg && legEnabled(i);
     return `<li><button class="leg${done ? " done" : ""}" data-leg="${i}" ${on ? 'aria-current="true"' : ""}
       ${legEnabled(i) ? "" : "disabled"} type="button">
-      <span class="num"><i>${i}</i></span>${esc(l.label)}</button></li>`;
+      <span class="num"><i>${i + 1}</i></span>${esc(l.label)}</button></li>`;
   }).join("");
 }
 
@@ -287,29 +432,29 @@ function stageBrief() {
   const guideUrl = (S.api || "https://tara-demo.onrender.com") + "/guide";
   const engineNote =
     S.mode === "live"
-      ? `<div class="note">The live engine answered. Every result you are about to see is computed on demand by the real agents at <code>${esc(S.api)}</code>.</div>`
+      ? `<div class="note"><b>Live calculation is ready.</b> The results in this walkthrough are being generated now from the prepared case.</div>`
       : S.mode === "replay"
-      ? `<div class="warn"><b>No live engine reachable, so this is running on captured output.</b> Every figure is still real — it was produced by the same pipeline on ${esc(REPLAY ? REPLAY.captured_at : "")} and recorded verbatim. Point the page at a deployed engine with the <b>Engine…</b> button to run profiles of your own.</div>`
-      : `<div class="warn">No engine and no captured data loaded.</div>`;
+      ? `<div class="warn"><b>The live service is unavailable, so TARA has switched to a prepared backup.</b> The backup contains results captured from the same workflow on ${esc(REPLAY ? REPLAY.captured_at : "")}.</div>`
+      : `<div class="warn">The calculation service and its backup are unavailable.</div>`;
 
   return `<header>
-      <span class="eyebrow">Challenge 23 · Regulatory Change-to-Action Agent</span>
-      <h2>Watch one rule change become one verified action</h2>
-      <p class="lede">Start with the tested judge path: Revenue's 41% → 38% fund-tax change. Then use the
-      exploratory cases to inspect multi-country and multi-domain breadth without confusing breadth with validation.</p>
+      <span class="eyebrow">A regulatory change-to-action prototype</span>
+      <h2>A rule changed. TARA makes the next step clear.</h2>
+      <p class="lede">Regulatory updates are difficult to read, compare, and apply to a real person. TARA shows what
+      changed, who may be affected, what they should do next, and what evidence a human reviewer should check.</p>
     </header>
     <div class="stack">
       ${engineNote}
-      <div class="note compact"><b>Prototype scope:</b> controlled source snapshots and synthetic cases only. This is not legal, tax, immigration, or filing advice; a qualified human must review any real-world action.</div>
+      <div class="note compact"><b>Prototype boundary:</b> this uses prepared examples and controlled source snapshots. It supports a qualified reviewer; it does not replace legal, tax, immigration, or filing advice.</div>
       <div class="journey" aria-label="Demo journey">
-        <div class="journey-step"><span>1</span><div><b>See what changed</b><p>A provision diff and both source hashes.</p></div></div>
-        <div class="journey-step"><span>2</span><div><b>See why it applies</b><p>Rule version, case facts, and the explicit decision.</p></div></div>
-        <div class="journey-step"><span>3</span><div><b>Test the proof</b><p>38% closes; the superseded 41% is returned.</p></div></div>
+        <div class="journey-step"><span>1</span><div><b>Understand the change</b><p>See the old rule and the new rule side by side.</p></div></div>
+        <div class="journey-step"><span>2</span><div><b>Get a clear action plan</b><p>See what applies to this person and what to do next.</p></div></div>
+        <div class="journey-step"><span>3</span><div><b>Check the evidence</b><p>Watch TARA reject the old 41% rate and accept 38%.</p></div></div>
       </div>
 
       <div>
-        <h3 style="font-size:var(--step-1);margin-bottom:4px">Choose a case to scan</h3>
-        <p class="hint" style="margin-bottom:12px">Each profile uses prepared stored facts and captured pipeline output. You can review or edit the case data after the scan.</p>
+        <h3 style="font-size:var(--step-1);margin-bottom:4px">Choose a prepared example</h3>
+        <p class="hint" style="margin-bottom:12px">Start with Maeve for the shortest, clearest walkthrough. The other cases show broader possibilities.</p>
         <div class="grid3">
           ${S.presets.map(p => `<button class="preset" data-preset="${esc(p.id)}" type="button"
               aria-pressed="${S.presetId === p.id}">
@@ -319,9 +464,9 @@ function stageBrief() {
         </div>
       </div>
       <div class="nav">
-        <button class="btn" id="begin" type="button" ${S.presetId ? "" : "disabled"}>Run the case scan →</button>
-        <a class="btn ghost" href="${esc(guideUrl)}" target="_blank" rel="noopener">Read the full guide ↗</a>
-        <span class="hint">${S.presetId ? ((S.presets.find(p => p.id === S.presetId) || {}).start_stage === 3 ? "Starts with the source change, then follows it to verified evidence." : "Starts with the multi-jurisdiction result; case facts remain available in the rail.") : "Choose a case to run."}</span>
+        <button class="btn" id="begin" type="button" ${S.presetId ? "" : "disabled"}>Start the walkthrough →</button>
+        <a class="btn ghost" href="${esc(guideUrl)}" target="_blank" rel="noopener">Open the full project guide ↗</a>
+        <span class="hint">${S.presetId ? ((S.presets.find(p => p.id === S.presetId) || {}).start_stage === 3 ? "You will begin with the rule change, then follow it through to accepted evidence." : "You will begin with the result; the case facts remain available in the navigation.") : "Choose a case to continue."}</span>
       </div>
     </div>`;
 }
@@ -333,33 +478,32 @@ function stageHolder() {
       aria-pressed="${chosen.includes(c)}">${esc(c)}</button>`).join("")}</div>`;
 
   return `<header>
-      <span class="eyebrow">Stage 1 · your register, holder level</span>
-      <h2>Who the obligations would belong to</h2>
-      <p class="lede">TARA never guesses these. Citizenship and tax residency are what decide whether a whole
-      jurisdiction is even in the conversation — a corridor pack is only tried when both of its facts are present.</p>
+      <span class="eyebrow">Step 2 of 9 · About the person</span>
+      <h2>The facts TARA is allowed to use</h2>
+      <p class="lede">Citizenship, tax residence, and dates can change which rules apply. TARA uses the facts shown here and asks when something important is missing; it does not fill gaps with guesses.</p>
     </header>
     <div class="stack">
       <div class="card pad stack">
         <div class="grid2">
           <label class="f"><span>Name</span><input type="text" id="f-name" value="${esc(h.name)}"></label>
-          <label class="f"><span>Tax residency began</span><input type="date" id="f-since" value="${esc(h.tax_residency_since || "")}">
-            <span class="hint">Drives the corridor's one-off FEMA deadline.</span></label>
+          <label class="f"><span>Tax residence began</span><input type="date" id="f-since" value="${esc(h.tax_residency_since || "")}">
+            <span class="hint">Used only when a rule depends on when tax residence began.</span></label>
         </div>
         <div class="f"><span>Citizenships</span>${multi("citizenships", COUNTRIES, h.citizenships)}
-          <span class="hint">US citizenship is what puts FBAR/FATCA in scope; Indian citizenship opens the India–Ireland corridor.</span></div>
-        <div class="f"><span>Tax residencies</span>${multi("tax_residencies", COUNTRIES, h.tax_residencies)}</div>
+          <span class="hint">Some rules depend on citizenship as well as where a person pays tax.</span></div>
+        <div class="f"><span>Countries of tax residence</span>${multi("tax_residencies", COUNTRIES, h.tax_residencies)}</div>
         <div class="grid2">
-          <label class="f"><span>Residency status used by the Irish packs</span>
+          <label class="f"><span>Irish tax-residence status</span>
             <select id="f-res">${RESIDENCIES.map(r => `<option ${h.holder_residency === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
-            <span class="hint">"Ordinarily resident" is the branch that keeps an emigrant in scope.</span></label>
-          <label class="f"><span>EEA, Swiss or UK national</span>
+            <span class="hint">Some Irish tax rules use this more detailed status.</span></label>
+          <label class="f"><span>European Economic Area, Swiss or UK national</span>
             <select id="f-eea"><option value="true" ${h.eea_swiss_uk_national ? "selected" : ""}>Yes</option>
               <option value="false" ${h.eea_swiss_uk_national ? "" : "selected"}>No</option></select>
-            <span class="hint">"No" is what makes Irish immigration registration apply at all.</span></label>
+            <span class="hint">Used to decide whether Irish residence registration may be relevant.</span></label>
         </div>
       </div>
       <div class="nav"><button class="btn ghost" data-goto="0" type="button">← Back</button>
-        <button class="btn" data-goto="2" type="button">Holdings →</button></div>
+        <button class="btn" data-goto="2" type="button">See what they hold →</button></div>
     </div>`;
 }
 
@@ -367,7 +511,7 @@ function stageHoldings() {
   const rows = S.holdings.map((hd, i) => `
     <div class="card pad stack" data-holding="${i}">
       <div class="row" style="align-items:center;justify-content:space-between">
-        <b class="mono">${esc(hd.holding_id)}</b>
+        <b>${esc(titleCase(hd.instrument_type))} in ${esc(hd.jurisdiction)}</b>
         ${S.holdings.length > 1 ? `<button class="tbtn" data-del="${i}" type="button">Remove</button>` : ""}
       </div>
       <div class="grid2">
@@ -389,29 +533,26 @@ function stageHoldings() {
         <label class="f"><span>Consideration (€)</span>
           <input type="number" data-h="${i}" data-k="disposal_consideration" value="${esc(hd.disposal_consideration || "")}"></label>` : ""}
         ${hd.instrument_type === "immigration_permission" ? `
-        <label class="f"><span>IRP registration due</span>
+        <label class="f"><span>Irish residence registration due</span>
           <input type="date" data-h="${i}" data-k="irp_registration_due_date" value="${esc(hd.irp_registration_due_date || "")}"></label>
-        <label class="f"><span>Current IRP expires</span>
+        <label class="f"><span>Current residence permission expires</span>
           <input type="date" data-h="${i}" data-k="irp_expiry_date" value="${esc(hd.irp_expiry_date || "")}">
           <span class="hint">A real date off the card, not a derived anniversary.</span></label>` : ""}
       </div>
-      ${hd.status === "disposed" ? `<p class="hint">The two statutory CGT dates (payment 15 December, return 31 October
-        the following year) are filled in from Revenue's own calendar when this reaches the engine — they are stated
-        dates, not anniversaries, so TARA's date engine cannot derive them and the register has to carry them.</p>` : ""}
+      ${hd.status === "disposed" ? `<p class="hint">Property-sale tax has fixed payment and return dates. TARA keeps those stated dates with the case instead of guessing an anniversary.</p>` : ""}
+      <details class="technical-details"><summary>Technical reference</summary><p><code>${esc(hd.holding_id)}</code></p></details>
     </div>`).join("");
 
   return `<header>
-      <span class="eyebrow">Stage 2 · your register, holding level</span>
-      <h2>What you hold, and where</h2>
-      <p class="lede">One row per asset or permission. Instrument type is doing more work than it looks:
-      it is the scoping question that correctly drops an Indian shareholding out of Ireland's offshore-fund pack —
-      while leaving the corridor free to reach it anyway.</p>
+      <span class="eyebrow">Step 3 of 9 · What they hold</span>
+      <h2>The assets and permissions that may be affected</h2>
+      <p class="lede">TARA checks each item separately because the type of asset, its country, and the event date can lead to different answers.</p>
     </header>
     <div class="stack">
       ${rows}
       <div class="row"><button class="btn ghost" id="addHolding" type="button">+ Add a holding</button></div>
       <div class="nav"><button class="btn ghost" data-goto="1" type="button">← Back</button>
-        <button class="btn" data-goto="3" type="button">Run the open band →</button></div>
+        <button class="btn" data-goto="3" type="button">See what changed →</button></div>
     </div>`;
 }
 
@@ -436,10 +577,19 @@ function diffHtml(text) {
   }).join("")}</div>`;
 }
 
+function diffSides(text) {
+  const lines = String(text || "").split("\n");
+  const before = lines.filter(l => l.startsWith("-") && !l.startsWith("---"))
+    .map(l => l.slice(1).trim()).join(" ");
+  const after = lines.filter(l => l.startsWith("+") && !l.startsWith("+++"))
+    .map(l => l.slice(1).trim()).join(" ");
+  return { before, after };
+}
+
 function stageChart() {
-  if (S.busy) return `<header><span class="eyebrow">Stage 3 · open band</span><h2>Reading the sources</h2></header>
-    ${busyPanel("SURVEY is hashing each source text, LEGEND is decomposing it into cited obligations, ALMANAC is versioning the graph…")}`;
-  if (S.error) return `<header><span class="eyebrow">Stage 3 · open band</span><h2>The Chart</h2></header>
+  if (S.busy) return `<header><span class="eyebrow">Step 4 of 9 · What changed</span><h2>Comparing the old and new source</h2></header>
+    ${busyPanel("TARA is checking the source snapshots and identifying the exact change…")}`;
+  if (S.error) return `<header><span class="eyebrow">Step 4 of 9 · What changed</span><h2>The source comparison</h2></header>
     <div class="stack">${errorPanel()}<div class="nav">
       <button class="btn ghost" data-goto="2" type="button">← Back</button>
       <button class="btn" id="retry" type="button">Try again</button></div></div>`;
@@ -450,65 +600,74 @@ function stageChart() {
   const totalSrc = Object.values(ob).reduce((n, p) => n + p.sources.length, 0);
   const changed = Object.values(ob).flatMap(p => p.sources).filter(s => s.changes.length).length;
 
-  const packs = Object.entries(ob).map(([id, p]) => `
-    <div class="card openband pad stack">
-      <div>
-        <div class="row" style="justify-content:space-between;align-items:baseline">
-          <b class="mono">${esc(id)}</b>
-          ${p.is_corridor ? `<span class="st st-INDETERMINATE">corridor</span>` : ""}
+  const changedCards = Object.entries(ob).flatMap(([id, p]) => p.sources.flatMap(s =>
+    (s.changes || []).map(c => {
+      const sides = diffSides(c.unified_diff);
+      return `<article class="card change-card pad stack">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <span class="st st-INDETERMINATE">Rule changed</span>
+          <a href="${esc(s.url)}" target="_blank" rel="noopener">Open the published source ↗</a>
         </div>
-        <p class="hint" style="margin-top:2px">${esc(p.title)}</p>
-      </div>
-      ${p.sources.map(s => `
-        <div class="card pad stack" style="gap:8px">
-          <b style="font-size:var(--step--1)">${esc(s.instrument)}</b>
-          <dl class="kv">
-            <dt>source</dt><dd>${esc(s.source_id)}</dd>
-            <dt>reached</dt><dd>${s.reached ? "yes" : "no"} · ${s.stale ? "stale" : "within verification window"}</dd>
-            <dt>v1 sha256</dt><dd title="${esc(s.v1_sha256)}">${esc(shortHash(s.v1_sha256))}</dd>
-            <dt>v2 sha256</dt><dd title="${esc(s.v2_sha256)}">${esc(shortHash(s.v2_sha256))}</dd>
+        <div><p class="context-label">${esc(domainLabel(id, p.title))}</p>
+          <h3>${esc(c.heading || c.provision)}</h3>
+          <p class="hint">${esc(s.instrument)} · ${esc(c.provision)}</p></div>
+        <div class="before-after" aria-label="Before and after rule text">
+          <div><span>Before</span><p>${esc(sides.before || "See the exact source comparison below.")}</p></div>
+          <div><span>Now</span><p>${esc(sides.after || "See the exact source comparison below.")}</p></div>
+        </div>
+        <div class="plain-summary"><b>Why this matters for this example</b>
+          <p>TARA keeps both versions and uses the case's event date to select the right one. For the recommended Maeve walkthrough, the 2026 event selects the current 38% rule rather than the former 41% rule.</p></div>
+        <details class="technical-details"><summary>See exact source text and integrity checks</summary>
+          ${diffHtml(c.unified_diff)}
+          <dl class="kv" style="margin-top:10px">
+            <dt>Internal source reference</dt><dd>${esc(s.source_id)}</dd>
+            <dt>Earlier snapshot</dt><dd title="${esc(s.v1_sha256)}">${esc(shortHash(s.v1_sha256))}</dd>
+            <dt>Current snapshot</dt><dd title="${esc(s.v2_sha256)}">${esc(shortHash(s.v2_sha256))}</dd>
+            <dt>Source check</dt><dd>${s.reached ? "Available" : "Unavailable"} · ${s.stale ? "review window expired" : "inside review window"}</dd>
           </dl>
-          ${s.changes.length
-            ? s.changes.map(c => `<div><span class="st st-INDETERMINATE">${esc(c.change_type)}</span>
-                <b style="font-size:var(--step--1);margin-left:6px">${esc(c.provision)} — ${esc(c.heading)}</b>
-                ${diffHtml(c.unified_diff)}</div>`).join("")
-            : `<p class="hint">Both snapshots hash identically — nothing in this source changed, and LEGEND re-derives the same obligations.</p>`}
-        </div>`).join("")}
-      <details><summary class="hint" style="cursor:pointer">${p.obligations.length} obligations catalogued from this source, including historical versions</summary>
-        <div style="margin-top:8px">${p.obligations.map(o => `
-          <div class="oblig"><div class="head">
-            <span class="id">${esc(o.obligation_id)}</span>
-            <span class="prov">${esc(o.provision)}</span>
-            <span class="st st-${o.change_type === "amended" ? "INDETERMINATE" : "EXEMPT"}">${esc(o.change_type)}</span>
-            <span class="prov">${esc(o.severity)} · evidence: ${esc(o.artefact_type)}</span>
-          </div><p class="txt">${esc(o.text)}</p></div>`).join("")}</div>
-      </details>
-    </div>`).join("");
+        </details>
+      </article>`;
+    }))
+  ).join("");
+
+  const coverageRows = Object.entries(ob).map(([id, p]) => {
+    const sourceChanges = p.sources.reduce((n, s) => n + (s.changes || []).length, 0);
+    return `<li><span>${esc(domainLabel(id, p.title))}</span><b>${sourceChanges ? "Change found" : "No change in stored snapshots"}</b></li>`;
+  }).join("");
+
+  const technicalCatalogue = Object.entries(ob).map(([id, p]) => `<details class="technical-details">
+    <summary>${esc(domainLabel(id, p.title))} · ${p.obligations.length} versioned requirements</summary>
+    <div style="margin-top:8px">${p.obligations.map(o => `<div class="oblig"><div class="head">
+      <span class="prov">${esc(o.provision)}</span>
+      <span class="st st-${o.change_type === "amended" ? "INDETERMINATE" : "EXEMPT"}">${esc(titleCase(o.change_type))}</span>
+    </div><p class="txt">${esc(o.text)}</p><p class="technical-ref">Internal reference: <code>${esc(o.obligation_id)}</code> · evidence type <code>${esc(o.artefact_type)}</code></p></div>`).join("")}</div>
+  </details>`).join("");
 
   return `<header>
-      <span class="eyebrow">Stage 3 · open band · SURVEY → LEGEND → ALMANAC</span>
-      <h2>The Chart, before anyone's name is on it</h2>
-      <p class="lede">This is computed once and is identical for every holder — which is exactly why it can be free.
-      Nothing below knows who you are yet.</p>
+      <span class="eyebrow">Step 4 of 9 · What changed</span>
+      <h2>TARA found the exact rule change</h2>
+      <p class="lede">Instead of asking a person to compare long documents, TARA shows the old wording, the new wording, and why the change matters for this example.</p>
     </header>
     <div class="stack">
       <div class="grid3">
-        <div class="tile"><div class="n">${Object.keys(ob).length}</div><div class="l">domain packs</div></div>
-        <div class="tile"><div class="n">${totalSrc}</div><div class="l">sources hashed</div></div>
-        <div class="tile"><div class="n">${totalObl}</div><div class="l">cited obligations</div></div>
-        <div class="tile"><div class="n">${changed}</div><div class="l">sources changed since v1</div></div>
+        <div class="tile"><div class="n">${changed}</div><div class="l">source change found</div></div>
+        <div class="tile"><div class="n">${Object.keys(ob).length}</div><div class="l">rule areas checked</div></div>
+        <div class="tile"><div class="n">${totalSrc}</div><div class="l">source sets compared</div></div>
       </div>
-      <div class="note">Where a source did change, SURVEY reports the provision-level diff and its two SHA-256 digests, and
-      LEGEND marks the new obligation <b>amended</b> while ALMANAC marks the one it replaces superseded. That is the
-      mechanical version of "change to action": nothing downstream has to be told the rate moved.</div>
-      ${packs}
+      ${changedCards || `<div class="note"><b>No source change was found in the stored snapshots for this example.</b></div>`}
+      <details class="card matrix-details"><summary><b>See all ${Object.keys(ob).length} rule areas checked</b><span>Most did not change, so they are kept out of the main story.</span></summary>
+        <ul class="coverage-list">${coverageRows}</ul>
+      </details>
+      <details class="card matrix-details"><summary><b>Technical catalogue</b><span>${totalObl} versioned requirements, references, and evidence types.</span></summary>
+        <div class="technical-catalogue">${technicalCatalogue}</div>
+      </details>
       <div class="nav"><button class="btn ghost" data-goto="2" type="button">← Back</button>
-        <button class="btn" data-goto="4" type="button">Now make it about you →</button></div>
+        <button class="btn" data-goto="4" type="button">See what applies to ${esc(S.holder.name)} →</button></div>
     </div>`;
 }
 
 function stageSurvey() {
-  if (!S.run) return busyPanel("MERIDIAN is checking every country pack and every eligible cross-border corridor in parallel…");
+  if (!S.run) return busyPanel("TARA is checking the case against each relevant rule area…");
   const hids = Object.keys(S.run.holdings);
   const packs = S.run.packs;
   const allResults = Object.values(S.run.holdings).flatMap(h => h.results);
@@ -517,47 +676,58 @@ function stageSurvey() {
   const activeCorridors = corridors.filter(r => r.considered && r.determination && r.determination.status === "CONFIRMED");
   const actionableCorridors = activeCorridors.filter(r => r.actions && r.actions.length);
   const unresolved = S.run.pending_questions.length;
-  const primaryFinding = actionableCorridors[0];
+  const actionableResults = allResults.filter(r => r.actions && r.actions.length);
+  const primaryFinding = actionableCorridors[0] || actionableResults[0];
+  const primaryAction = primaryFinding && primaryFinding.actions && primaryFinding.actions.find(a => a.expected_rate != null)
+    || primaryFinding && primaryFinding.actions && primaryFinding.actions[0];
+  const primaryHeadline = primaryAction && primaryAction.expected_rate != null
+    ? `The current ${(primaryAction.expected_rate * 100).toFixed(0)}% rule applies`
+    : primaryFinding ? domainLabel(primaryFinding.domain_id, primaryFinding.title) : "No action is needed";
+  const primaryCopy = primaryAction && primaryAction.expected_rate != null
+    ? `The event falls under the newer rule, so the former 41% rate is not used. TARA created ${primaryFinding.actions.length} clear next step${primaryFinding.actions.length === 1 ? "" : "s"}.`
+    : primaryFinding ? `${plainReason(primaryFinding.determination && primaryFinding.determination.reason)} TARA created ${primaryFinding.actions.length} next step${primaryFinding.actions.length === 1 ? "" : "s"}.` : "Every checked rule area was ruled out or needs more information.";
 
   const head = `<tr><th>Holding</th>${packs.map(p =>
-    `<th class="${p.is_corridor ? "corr" : ""}" title="${esc(p.title)}">${esc(p.domain_id)}${p.is_corridor ? " ◇" : ""}</th>`).join("")}</tr>`;
+    `<th class="${p.is_corridor ? "corr" : ""}" title="${esc(p.title)}">${esc(domainLabel(p.domain_id, p.title))}</th>`).join("")}</tr>`;
 
   const body = hids.map(hid => {
     const H = S.run.holdings[hid];
-    return `<tr><th scope="row"><span class="hid">${esc(hid)}</span>
-      <span class="kind">${esc(titleCase(H.holding.instrument_type))} · ${esc(H.holding.jurisdiction)}</span></th>
+    return `<tr><th scope="row"><span class="kind">${esc(titleCase(H.holding.instrument_type))} · ${esc(H.holding.jurisdiction)}</span></th>
       ${packs.map(p => {
         const r = H.results.find(x => x.domain_id === p.domain_id);
         const st = r.determination ? r.determination.status : "SKIPPED";
         const sel = S.cell && S.cell.hid === hid && S.cell.domain_id === p.domain_id;
         return `<td><button class="cell" type="button" data-cell="${esc(hid)}|${esc(p.domain_id)}" aria-pressed="${!!sel}">
-          <span class="st st-${st}">${st}</span>
-          ${r.actions.length ? `<span class="acts">${r.actions.length} action${r.actions.length > 1 ? "s" : ""}</span>` : ""}
+          <span class="st st-${st}">${esc(statusLabel(st))}</span>
+          ${r.actions.length ? `<span class="acts">${r.actions.length} next step${r.actions.length > 1 ? "s" : ""}</span>` : ""}
         </button></td>`;
       }).join("")}</tr>`;
   }).join("");
 
-  let detail = `<div class="note">Click any cell to read the exact reason the agents gave. A dashed
-    <b>skipped</b> means the corridor was checked against your facts and ruled out before it was run at all —
-    not silently ignored.</div>`;
+  let detail = `<div class="note">Select any result to see why it applies, does not apply, or needs more information. Technical references stay hidden until you ask for them.</div>`;
   if (S.cell) {
     const H = S.run.holdings[S.cell.hid];
     const r = H.results.find(x => x.domain_id === S.cell.domain_id);
     const det = r.determination;
     detail = `<div class="detail stack" style="gap:10px">
-      <div><h4>${esc(S.cell.hid)} × ${esc(r.domain_id)}</h4>
-        <p class="hint">${esc(r.title)}</p></div>
+      <div><h4>${esc(holdingLabel(S.cell.hid))}</h4>
+        <p class="hint">${esc(domainLabel(r.domain_id, r.title))}</p></div>
       <div class="row" style="gap:8px;align-items:center">
-        <span class="st st-${det ? det.status : "SKIPPED"}">${det ? det.status : "SKIPPED"}</span>
-        ${det && det.relied_on ? `<span class="hint">turned on <code>${esc(det.relied_on)}</code></span>` : ""}
+        <span class="st st-${det ? det.status : "SKIPPED"}">${esc(statusLabel(det ? det.status : "SKIPPED"))}</span>
       </div>
-      <p class="reason">${esc(det ? det.reason : r.skipped_reason)}</p>
-      ${r.gaps.length ? `<div><b style="font-size:var(--step--1)">What PLOT decided for each obligation</b>
-        ${r.gaps.map(g => `<div class="oblig"><div class="head">
-          <span class="id">${esc(g.obligation_id)}</span><span class="prov">${esc(g.provision)}</span>
-          <span class="st st-${g.coverage === "not_applicable" ? "EXEMPT" : "INDETERMINATE"}">${esc(g.coverage)}</span>
-          ${g.trigger_date ? `<span class="prov">triggered ${esc(g.trigger_date)}</span>` : ""}
-        </div><p class="txt">${esc(g.reason)}</p></div>`).join("")}</div>` : ""}
+      <p class="reason">${esc(plainReason(det ? det.reason : r.skipped_reason))}</p>
+      ${r.gaps.length ? `<div><b style="font-size:var(--step--1)">How each requirement was handled</b>
+        ${r.gaps.map(g => {
+          const info = obligationInfo(r.domain_id, g.obligation_id);
+          const action = (r.actions || []).find(a => a.obligation_id === g.obligation_id) || { artefact_type: g.artefact_type };
+          const gapStatus = g.coverage === "not_applicable" ? "EXEMPT" : g.coverage === "indeterminate" ? "INDETERMINATE" : "CONFIRMED";
+          return `<div class="oblig"><div class="head"><b>${esc(actionTitle(action, info))}</b>
+            <span class="st st-${gapStatus}">${esc(statusLabel(gapStatus))}</span>
+            ${g.trigger_date ? `<span class="prov">Relevant date: ${esc(formatDate(g.trigger_date))}</span>` : ""}
+          </div><p class="txt">${esc(plainReason(g.reason))}</p>
+          <details class="technical-details"><summary>Technical reference</summary><p><code>${esc(g.obligation_id)}</code> · ${esc(g.provision)}</p></details></div>`;
+        }).join("")}</div>` : ""}
+      <details class="technical-details"><summary>Decision references</summary><p>Holding <code>${esc(S.cell.hid)}</code> · rule area <code>${esc(r.domain_id)}</code>${det && det.relied_on ? ` · decision question <code>${esc(det.relied_on)}</code>` : ""}</p></details>
     </div>`;
   }
 
@@ -565,38 +735,35 @@ function stageSurvey() {
   const cells = hids.length * packs.length;
 
   return `<header>
-      <span class="eyebrow">Stage 4 · MERIDIAN · one tenant pass per jurisdiction</span>
-      <h2>The result of a parallel scan</h2>
-      <p class="lede">${hids.length} asset${hids.length > 1 ? "s" : ""} × ${packs.length} packs = ${cells} cited determinations.
-      TARA checks the individual country packs and every eligible cross-border corridor against the same case facts.</p>
+      <span class="eyebrow">Step 5 of 9 · What applies</span>
+      <h2>Here is what TARA found for ${esc(S.holder.name)}</h2>
+      <p class="lede">TARA checked ${hids.length} item${hids.length > 1 ? "s" : ""} against ${packs.length} rule areas using the same case facts. The important result appears first; the full check remains available below.</p>
     </header>
     <div class="stack">
       <div class="scan-hero card pad stack">
         <div class="scan-stats">
-          <div><b>${cells}</b><span>checks completed</span></div>
-          <div><b>${corridors.length}</b><span>corridors tested</span></div>
-          <div><b>${actionableCorridors.length}</b><span>cross-border finding${actionableCorridors.length === 1 ? "" : "s"}</span></div>
-          <div><b>${S.run.actions.length}</b><span>pipeline actions opened</span></div>
+          <div><b>${cells}</b><span>rule checks completed</span></div>
+          <div><b>${confirmed}</b><span>result${confirmed === 1 ? "" : "s"} that appl${confirmed === 1 ? "ies" : "y"}</span></div>
+          <div><b>${S.run.actions.length}</b><span>next steps created</span></div>
+          <div><b>${unresolved}</b><span>questions still open</span></div>
         </div>
         ${primaryFinding ? `<div class="finding">
-          <span class="st st-CONFIRMED">Cross-border finding</span>
-          <div><b>${esc(primaryFinding.title)}</b>
-            <p>${esc(primaryFinding.determination.reason)} This is the rule family a single-country check would not surface on its own.</p></div>
-          <button class="btn" data-goto="6" type="button">Open the Playbook →</button>
+          <span class="st st-CONFIRMED">Applies</span>
+          <div><b>${esc(primaryHeadline)}</b><p>${esc(primaryCopy)}</p></div>
+          <button class="btn" data-goto="6" type="button">See the action plan →</button>
         </div>` : `<div class="finding muted">
-          <span class="st st-EXEMPT">No corridor triggered</span>
-          <div><b>The scan still ruled every corridor in or out explicitly.</b>
-            <p>Open the detailed scan to see the source-backed reasons for each result.</p></div>
+          <span class="st st-EXEMPT">No action needed</span>
+          <div><b>No checked rule created a next step.</b><p>Open the detailed results to see the reason for each decision.</p></div>
         </div>`}
-        ${unresolved ? `<div class="note"><b>${unresolved} additional fact${unresolved === 1 ? " is" : "s are"} still needed for a separate rule.</b> It does not block the cross-border finding above; COMPASS will not guess where the register is incomplete.</div>` : ""}
+        ${unresolved ? `<div class="note"><b>${unresolved} additional fact${unresolved === 1 ? " is" : "s are"} still needed for a separate rule.</b> This does not block the result above. TARA leaves that rule open instead of guessing.</div>` : ""}
       </div>
-      <details class="card matrix-details"><summary><b>See the full ${cells}-cell scan</b><span>Each result is clickable for the agent's reasoning.</span></summary>
+      <details class="card matrix-details"><summary><b>See all ${cells} rule checks</b><span>Select a result for the plain-language reason.</span></summary>
         <div class="matrix-wrap"><table class="matrix"><thead>${head}</thead><tbody>${body}</tbody></table></div>
       </details>
-      ${S.cell ? detail : `<div class="note"><b>Want the audit trail behind a result?</b> Open the full scan, then select any cell to read the exact reason. A dashed <b>skipped</b> means a corridor was considered and ruled out before a full run — not silently ignored.</div>`}
+      ${S.cell ? detail : `<div class="note"><b>Want to inspect another result?</b> Open the full check above and select any cell. TARA explains both positive and negative decisions.</div>`}
       <div class="nav"><button class="btn ghost" data-goto="1" type="button">Review case facts</button>
-        ${unresolved ? `<button class="btn ghost" data-goto="5" type="button">Answer COMPASS's question</button>` : ""}
-        <button class="btn" data-goto="6" type="button">${primaryFinding ? "Open the Playbook →" : "Review actions →"}</button></div>
+        ${unresolved ? `<button class="btn ghost" data-goto="5" type="button">Answer the missing question</button>` : ""}
+        <button class="btn" data-goto="6" type="button">${primaryFinding ? "See the action plan →" : "Review next steps →"}</button></div>
     </div>`;
 }
 
@@ -607,36 +774,30 @@ function stageInterview() {
 
   const asked = qs.length ? qs.map(q => `
     <div class="qcard">
-      <div class="qh">${esc(q.domain_id)} needs one fact your register does not hold</div>
+      <div class="qh">One answer is needed for ${esc(domainLabel(q.domain_id))}</div>
       <div class="qb">
         <p class="qt">${esc(q.text)}</p>
-        <p class="hint">Asked by COMPASS as <code>${esc(q.question_id)}</code> on ${esc(q.holding_id)}.
-          Until it is answered that pack stays <b>INDETERMINATE</b> — it will not guess, and it will not
-          quietly return EXEMPT.</p>
+        <p class="hint">Until this is answered, TARA leaves that rule as <b>more information needed</b>. It does not guess or quietly decide that the rule does not apply.</p>
         <div class="row">
           <button class="btn" data-answer="${esc(q.question_id)}|true" type="button">Yes</button>
           <button class="btn" data-answer="${esc(q.question_id)}|false" type="button">No</button>
         </div>
+        <details class="technical-details"><summary>Technical reference</summary><p>Question <code>${esc(q.question_id)}</code> · item <code>${esc(q.holding_id)}</code> · rule area <code>${esc(q.domain_id)}</code></p></details>
       </div>
     </div>`).join("") : `<div class="card pad">
       <b>Nothing to ask.</b>
-      <p class="hint" style="margin-top:4px">COMPASS answered every scoping question for this profile straight off
-      the register. An interview only happens where a pack asks something a register genuinely cannot hold —
-      like whether a property was your only or main residence.</p></div>`;
+      <p class="hint" style="margin-top:4px">The prepared case already contains every fact needed for this result. TARA asks a person only when the stored information cannot answer an important question.</p></div>`;
 
   return `<header>
-      <span class="eyebrow">Stage 5 · COMPASS · the interview</span>
+      <span class="eyebrow">Step 6 of 9 · Missing information</span>
       <h2>${qs.length ? "One fact it will not assume" : "It had everything it needed"}</h2>
-      <p class="lede">A scoping question with a <code>register_field</code> is answered from your data. One without
-      has to be asked. That distinction is declared in the domain pack's YAML, not decided by a model.</p>
+      <p class="lede">When an important fact is missing, TARA pauses that part of the result and asks a direct question. A human answer is safer than an invented assumption.</p>
     </header>
     <div class="stack">
-      ${S.busy ? busyPanel("Re-running the tenant band with your answer…") : asked}
-      ${answered.length ? `<div class="note">Answered so far: ${answered.map(k =>
-        `<code>${esc(k)} = ${esc(String(S.answers[k]))}</code>`).join(", ")}. Each answer re-runs COMPASS, PLOT and
-        COURSE from scratch — nothing is patched in place.</div>` : ""}
-      <div class="nav"><button class="btn ghost" data-goto="4" type="button">← Back to the survey</button>
-        <button class="btn" data-goto="6" type="button">See what is owed →</button></div>
+      ${S.busy ? busyPanel("Rechecking the case with your answer…") : asked}
+      ${answered.length ? `<div class="note"><b>Answer recorded.</b> TARA reran the affected checks from the beginning so the updated result is reproducible.</div>` : ""}
+      <div class="nav"><button class="btn ghost" data-goto="4" type="button">← Back to results</button>
+        <button class="btn" data-goto="6" type="button">See the action plan →</button></div>
     </div>`;
 }
 
@@ -676,8 +837,8 @@ function topoSteps(actions) {
 // Treaty-relief obligations get a callout badge in the card header — this is
 // the "flag whether DTAA rules apply" the corridor packs exist to answer.
 const TREATY_ARTEFACTS = {
-  form_10f_and_trc: "Treaty relief applies — DTAA Form 10F + Tax Residency Certificate",
-  form_1116_ftc_claim: "Treaty relief applies — US Foreign Tax Credit, IRS Form 1116"
+  form_10f_and_trc: "Tax-treaty relief may apply — prepare Form 10F and a tax residency certificate",
+  form_1116_ftc_claim: "Tax-treaty relief may apply — prepare a US foreign tax credit claim"
 };
 
 // The one-line "small calculation" the Irish case asked for by name: whatever
@@ -693,7 +854,7 @@ function calcLine(a, domainId) {
   if (sa.rate_applied != null) bits.push(`× ${(sa.rate_applied * 100).toFixed(1)}%`);
   if (sa.gain_type) bits.push(esc(titleCase(sa.gain_type)) + " gain");
   return `<div class="calc">Estimated: ${money(sa.computed_tax, currency)}${bits.length ? " — " + bits.join(" ") : ""}
-    <span class="hint">· refine and submit this on the Evidence stage</span></div>`;
+    <span class="hint">· review this on the next screen</span></div>`;
 }
 
 // One row per cross-border corridor pack this holder was checked against —
@@ -716,9 +877,9 @@ function corridorRow(r) {
     : st === "EXEMPT" ? "does not apply"
     : st === "SKIPPED" ? "not applicable" : "needs an answer";
   return `<div class="crow">
-    <span class="cn">${esc(r.title)}</span>
+    <span class="cn">${esc(domainLabel(r.domain_id, r.title))}</span>
     <span class="st st-${esc(st)}">${esc(label)}</span>
-    <span class="hint">${esc(reason)}</span>
+    <span class="hint">${esc(plainReason(reason))}</span>
   </div>`;
 }
 
@@ -762,16 +923,18 @@ function stageActions() {
       return `<div class="step${checked ? " done" : ""}">
         <span class="stepnum">${i + 1}</span>
         <div>
-          <div class="stitle">${esc(a.obligation_id)}${a.provision ? " · " + esc(a.provision) : ""}</div>
-          <p class="action-meta">Engine-supplied action date: <code>${esc(a.deadline || "no date published")}</code>
-            ${a.deadline ? ` · derived ${esc(a.deadline_direction || "before")} the configured event` : ""}
-            ${appliesTo.length > 1 ? ` · applies to <code>${esc(appliesTo.join(", "))}</code>` : ""}</p>
-          <p class="stxt">${esc(info && info.obligation ? info.obligation.text : "")}</p>
-          <p class="hint">Evidence required: <code>${esc(a.artefact_type || a.required_evidence_type)}</code>
-            ${info && info.source ? ` · <a href="${esc(info.source.url)}" target="_blank" rel="noopener">Read the source →</a>` : ""}</p>
+          <div class="stitle">${esc(actionTitle(a, info))}</div>
+          <p class="action-meta"><b>${a.deadline ? `Do this by ${esc(formatDate(a.deadline))}` : "Agree a date with a qualified reviewer"}</b>
+            ${appliesTo.length > 1 ? ` · applies to ${esc(appliesTo.map(holdingLabel).join(", "))}` : ""}</p>
+          <p class="stxt">Prepare <b>${esc(evidenceLabel(a.artefact_type || a.required_evidence_type).toLowerCase())}</b> so a human reviewer can confirm this step is complete.</p>
+          ${info && info.source ? `<p class="hint"><a href="${esc(info.source.url)}" target="_blank" rel="noopener">Read the source for this step ↗</a></p>` : ""}
           ${calcLine(a, domainId)}
           <label class="checkline"><input type="checkbox" data-check="${esc(actionId)}" ${checked ? "checked" : ""}>
-            Already in place${assumed ? ` <span class="assumed">(assumed from her profile — uncheck if not yet done)</span>` : ""}</label>
+            Mark as already completed${assumed ? ` <span class="assumed">(preselected from the prepared case — change if needed)</span>` : ""}</label>
+          <details class="technical-details"><summary>Technical and legal reference</summary>
+            <p>${esc(info && info.obligation ? info.obligation.text : "")}</p>
+            <p>Provision ${esc(a.provision || "not stated")} · requirement <code>${esc(a.obligation_id)}</code> · action <code>${esc(a.action_id)}</code> · evidence type <code>${esc(a.artefact_type || a.required_evidence_type)}</code></p>
+          </details>
         </div>
       </div>`;
     }).join("");
@@ -779,59 +942,50 @@ function stageActions() {
     return `<div class="card pad stack playbook-card">
       <div class="phead">
         <div>
-          <span class="ptitle">${esc(pack.title || domainId)}</span>
-          <span class="hint"> · ${esc(affectedHoldings.join(", "))}</span>
+          <span class="ptitle">${esc(domainLabel(domainId, pack.title))}</span>
+          <span class="hint"> · ${esc(affectedHoldings.map(holdingLabel).join(", "))}</span>
         </div>
         <div class="row" style="gap:6px">
-          ${pack.is_corridor ? `<span class="st st-INDETERMINATE">corridor</span>` : ""}
+          ${pack.is_corridor ? `<span class="st st-INDETERMINATE">Cross-border</span>` : ""}
           ${[...treatyBadges].map(b => `<span class="chip" style="cursor:default">${esc(b)}</span>`).join("")}
         </div>
       </div>
-      ${primarySource ? `<p class="hint">Obligation: <a href="${esc(primarySource.url)}" target="_blank" rel="noopener">${esc(primarySource.instrument)} →</a></p>` : ""}
-      ${affectedHoldings.length > 1 ? `<p class="note compact"><b>Consolidated for the walkthrough.</b> The same legal duty was triggered for ${esc(affectedHoldings.join(", "))}; each underlying action remains individually available in the evidence check.</p>` : ""}
+      ${primarySource ? `<p class="hint">Primary source: <a href="${esc(primarySource.url)}" target="_blank" rel="noopener">${esc(primarySource.instrument)} ↗</a></p>` : ""}
+      ${affectedHoldings.length > 1 ? `<p class="note compact"><b>Shown once for clarity.</b> The same requirement affects ${esc(affectedHoldings.map(holdingLabel).join(", "))}; TARA still tracks each item separately.</p>` : ""}
       <div class="steps">${stepsHtml}</div>
     </div>`;
   }).join("");
 
   const corridors = corridorSummary();
-  const corridorPanel = corridors.length ? `<div class="card pad">
-      <b style="font-size:var(--step--1)">Cross-border corridors checked</b>
-      <p class="hint" style="margin:2px 0 4px">Every pair this build loads — India-Ireland, India-US, Ireland-US —
-      checked against this holder's own citizenships and tax residencies, whether or not it ends up applying.</p>
-      ${corridors.map(corridorRow).join("")}
-    </div>` : "";
+  const corridorPanel = corridors.length ? `<details class="card matrix-details"><summary><b>See cross-border checks</b><span>Why each country combination applies or does not apply.</span></summary>
+      <div class="pad">${corridors.map(corridorRow).join("")}</div>
+    </details>` : "";
 
   const assumption = PLAYBOOK_ASSUMPTIONS[S.presetId];
 
   return `<header>
-      <span class="eyebrow">Stage 6 · PLOT → COURSE · the playbook</span>
-      <h2>${acts.length ? `A concrete plan, not a compliance verdict`
+      <span class="eyebrow">Step 7 of 9 · Action plan</span>
+      <h2>${acts.length ? `What ${esc(S.holder.name)} should do next`
         : "Nothing is outstanding"}</h2>
       <p class="lede">${acts.length
-        ? `Each card below is a source-backed obligation the case is confirmed in scope for: the citation, the steps
-           in order, a concrete action date, and a checklist for what is already in place. Nothing here is computed
-           by this page — every figure, date and citation came from the agents in the earlier stages.`
-        : `Every pack ruled this holder out, and each said why with a citation — which is a real answer, not a
-           failure to find one. Go back to stage 4 to read the reasons, or to stage 5 to answer COMPASS differently.`}</p>
+        ? `The important information comes first: the task, the date, and the evidence to keep. Legal references and internal IDs are available only when you open the technical details.`
+        : `Every checked rule either does not apply or is waiting for more information. Return to the results to see each reason.`}</p>
     </header>
     <div class="stack">
       <div class="grid3">
-        <div class="tile"><div class="n">${uniqueObligationCount}</div><div class="l">source obligations</div></div>
-        <div class="tile"><div class="n">${groups.size}</div><div class="l">Playbooks to work through</div></div>
-        <div class="tile"><div class="n">${acts.length}</div><div class="l">underlying actions tracked</div></div>
+        <div class="tile"><div class="n">${uniqueObligationCount}</div><div class="l">clear tasks</div></div>
+        <div class="tile"><div class="n">${groups.size}</div><div class="l">rule areas involved</div></div>
+        <div class="tile"><div class="n">${Object.values(S.checklist).filter(Boolean).length}</div><div class="l">marked complete</div></div>
       </div>
       ${assumption ? `<div class="note"><b>Assumptions this profile makes:</b> ${esc(assumption.note)}</div>` : ""}
       ${corridorPanel}
       ${cards || `<div class="card pad"><b>No open actions.</b><p class="hint" style="margin-top:4px">
-        Every pack either ruled this holder out with a citation, or is still waiting on an answer at stage 5.</p></div>`}
+        Every rule area either does not apply or is still waiting for an answer.</p></div>`}
       <details class="note"><summary style="cursor:pointer"><b>How action dates are derived</b></summary>
-        <p style="margin-top:8px">Each evidence rule declares whether its action date falls <b>before</b>, <b>on</b>, or
-        <b>after</b> the configured event only when the source supplies a fixed period. Qualitative timing such as
-        “within a reasonable period” stays undated and is escalated for manual scheduling. A missing event date produces
-        an indeterminate result, not an invented deadline.</p>
+        <p style="margin-top:8px">TARA calculates a date only when the source gives a fixed period. Wording such as “within a reasonable period” stays undated and is sent for human scheduling. If an event date is missing, TARA leaves the result open rather than inventing one.</p>
       </details>
       <div class="nav"><button class="btn ghost" data-goto="4" type="button">← Back to scan</button>
-        <button class="btn" data-goto="7" type="button" ${acts.length ? "" : "disabled"}>Submit evidence →</button></div>
+        <button class="btn" data-goto="7" type="button" ${acts.length ? "" : "disabled"}>Check the evidence →</button></div>
     </div>`;
 }
 
@@ -851,11 +1005,11 @@ function selectAction(id) {
 function stageEvidence() {
   if (!S.run) return busyPanel("Waiting…");
   const acts = S.run.actions;
-  if (!acts.length) return `<header><span class="eyebrow">Stage 7 · ANCHOR</span>
-    <h2>Nothing outstanding to evidence</h2></header>
-    <div class="stack"><div class="card pad">Go back to stage 5 and answer COMPASS's question to open some actions.</div>
+  if (!acts.length) return `<header><span class="eyebrow">Step 8 of 9 · Check evidence</span>
+    <h2>There is no open task to check</h2></header>
+    <div class="stack"><div class="card pad">Return to the missing-information step if another answer is needed.</div>
     <div class="nav"><button class="btn ghost" data-goto="6" type="button">← Back</button>
-    <button class="btn" data-goto="8" type="button">The ledger →</button></div></div>`;
+    <button class="btn" data-goto="8" type="button">See the proof record →</button></div></div>`;
 
   if (!S.actionId) {
     // open on an action ANCHOR can reject on the rate — that check is the
@@ -864,28 +1018,31 @@ function stageEvidence() {
     selectAction(best.action_id);
   }
   const a = currentAction();
+  const info = obligationInfo(a.domain_id, a.obligation_id);
+  const selectedTitle = actionTitle(a, info);
 
   const fields = Object.keys(S.artefact).filter(k => k !== "artefact_type").map(k => {
     const v = S.artefact[k];
     const isNum = typeof v === "number";
     const isDate = /_date$/.test(k) && /^\d{4}-\d{2}-\d{2}$/.test(String(v));
     const req = (a.required_fields || []).includes(k);
-    return `<label class="f"><span>${esc(k)}${req ? "" : ' <span class="hint">(extra)</span>'}</span>
+    return `<label class="f"><span>${esc(fieldLabel(k))}${req ? "" : ' <span class="hint">(optional)</span>'}</span>
       <input class="mono" type="${isDate ? "date" : isNum ? "number" : "text"}"
         ${isNum ? 'step="any"' : ""} data-art="${esc(k)}" value="${esc(v)}"></label>`;
   }).join("");
 
   const variants = Object.entries(a.variants || {}).map(([k, v]) =>
-    `<button class="chip" type="button" data-variant="${esc(k)}">${esc(v.label)}</button>`).join("");
+    `<button class="chip" type="button" data-variant="${esc(k)}">${esc(plainVariantLabel(v.label))}</button>`).join("");
 
   const result = S.closure ? `
     <div class="detail stack" style="gap:8px;border-left-color:${S.closure.outcome === "closed" ? "var(--verdigris)" : "var(--magenta)"}">
       <div class="row" style="align-items:center;gap:10px">
-        <span class="st st-${esc(S.closure.outcome)}">${S.closure.outcome === "closed" ? "closed" : "returned"}</span>
-        <b>${esc(S.closure.obligation_id)}</b>
+        <span class="st st-${esc(S.closure.outcome)}">${esc(statusLabel(S.closure.outcome))}</span>
+        <b>${S.closure.outcome === "closed" ? "This evidence is ready for human review." : "This evidence needs to be corrected."}</b>
       </div>
-      <p class="reason">${esc(S.closure.reason)}</p>
-      ${S.closure.trigger_date ? `<p class="hint">Checked against trigger date ${esc(S.closure.trigger_date)}.</p>` : ""}
+      <p class="reason">${esc(plainReason(S.closure.reason))}</p>
+      ${S.closure.trigger_date ? `<p class="hint">Checked against the relevant date: ${esc(formatDate(S.closure.trigger_date))}.</p>` : ""}
+      <details class="technical-details"><summary>Technical reference</summary><p>Requirement <code>${esc(S.closure.obligation_id)}</code></p></details>
     </div>` : "";
 
   const uncaptured = S.error === "uncaptured" ? `<div class="warn">
@@ -893,36 +1050,36 @@ function stageEvidence() {
     breaking it offered above. Use one of those chips, or connect a live engine to verify anything you like.</div>` : "";
 
   return `<header>
-      <span class="eyebrow">Stage 7 · ANCHOR · the part that says no</span>
-      <h2>Submit the proof and see whether it holds</h2>
-      <p class="lede">ANCHOR checks the artefact type, every required field, the rate the current provision demands,
-      and — where the operands are present — that the arithmetic is <i>exactly</i> right. Approximately correct is
-      not correct.</p>
+      <span class="eyebrow">Step 8 of 9 · Check evidence</span>
+      <h2>Is the evidence good enough?</h2>
+      <p class="lede">TARA checks that the right information is present and that the calculation matches the current rule. Try the old 41% rate first, then restore the correct 38% example.</p>
     </header>
     <div class="stack">
-      <label class="f" style="max-width:640px"><span>Which action are you closing?</span>
+      <label class="f" style="max-width:760px"><span>Which task are you checking?</span>
         <select id="actionPick">${acts.map(x => `<option value="${esc(x.action_id)}" ${x.action_id === S.actionId ? "selected" : ""}>
-          ${esc(x.obligation_id)} — ${esc(x.holding_id || "case")} · ${esc(x.domain_id)} · due ${esc(x.deadline || "n/a")}</option>`).join("")}</select></label>
+          ${esc(actionTitle(x, obligationInfo(x.domain_id, x.obligation_id)))} — ${esc(holdingLabel(x.holding_id))}${x.deadline ? ` · due ${esc(formatDate(x.deadline))}` : ""}</option>`).join("")}</select></label>
 
       <div class="card pad stack">
-        <dl class="kv"><dt>artefact_type</dt><dd>${esc(S.artefact.artefact_type)}</dd>
-          <dt>required</dt><dd>${esc((a.required_fields || []).join(", ") || "—")}</dd>
-          ${a.expected_rate != null ? `<dt>rate demanded</dt><dd>${(a.expected_rate * 100).toFixed(0)}%</dd>` : ""}</dl>
+        <div><p class="context-label">Evidence for</p><h3>${esc(selectedTitle)}</h3>
+          <p class="hint">Expected document: ${esc(evidenceLabel(S.artefact.artefact_type))}${a.expected_rate != null ? ` · required rate: ${(a.expected_rate * 100).toFixed(0)}%` : ""}</p></div>
         <div class="grid2">${fields}</div>
         <div>
-          <p class="hint" style="margin-bottom:6px">Prefilled with a submission that satisfies the rule. Try breaking it:</p>
+          <p class="hint" style="margin-bottom:6px">This form starts with a correct example. Use these buttons to test common mistakes:</p>
           <div class="chips">${variants}</div>
         </div>
+        <details class="technical-details"><summary>Technical evidence contract</summary>
+          <p>Evidence type <code>${esc(S.artefact.artefact_type)}</code> · required fields <code>${esc((a.required_fields || []).join(", ") || "none")}</code> · action <code>${esc(a.action_id)}</code></p>
+        </details>
         <div class="row" style="align-items:center;gap:12px">
-          <button class="btn" id="submitEvidence" type="button" ${S.busy ? "disabled" : ""}>Submit to ANCHOR</button>
+          <button class="btn" id="submitEvidence" type="button" ${S.busy ? "disabled" : ""}>Check this evidence</button>
           ${S.busy ? `<span class="spin"></span>` : ""}
         </div>
       </div>
       ${uncaptured}
       ${S.error && S.error !== "uncaptured" ? errorPanel() : ""}
       ${result}
-      <div class="nav"><button class="btn ghost" data-goto="6" type="button">← Back</button>
-        <button class="btn" data-goto="8" type="button">The ledger →</button></div>
+      <div class="nav"><button class="btn ghost" data-goto="6" type="button">← Back to action plan</button>
+        <button class="btn" data-goto="8" type="button">See the proof record →</button></div>
     </div>`;
 }
 
@@ -931,41 +1088,41 @@ function stageLedger() {
   const at = S.run.atlas;
   const verification = S.verification;
   return `<header>
-      <span class="eyebrow">Stage 8 · ATLAS · append-only, hash-chained</span>
-      <h2>Trace this demo run</h2>
-      <p class="lede">The pipeline records the source-to-action steps in a hash-linked order. The latest ANCHOR check is shown separately below so the demo does not pretend two server-side runs are one durable production ledger.</p>
+      <span class="eyebrow">Step 9 of 9 · Proof record</span>
+      <h2>See how TARA reached this result</h2>
+      <p class="lede">Every important step is recorded in order, from reading the source to checking the case and creating the action plan. A tamper check confirms whether that sequence is intact.</p>
     </header>
     <div class="stack">
       <div class="grid3">
-        <div class="tile"><div class="n">${at.entry_count}</div><div class="l">pipeline entries this run</div></div>
-        <div class="tile"><div class="n" style="color:${at.chain_verified ? "var(--verdigris)" : "var(--magenta)"}">${at.chain_verified ? "verified" : "broken"}</div><div class="l">chain integrity</div></div>
-        <div class="tile"><div class="n">${at.agents_seen.length}</div><div class="l">agents that wrote</div></div>
+        <div class="tile"><div class="n">Complete</div><div class="l">source-to-action record</div></div>
+        <div class="tile"><div class="n" style="color:${at.chain_verified ? "var(--verdigris)" : "var(--magenta)"}">${at.chain_verified ? "Passed" : "Failed"}</div><div class="l">tamper check</div></div>
+        <div class="tile"><div class="n">${verification && S.closure ? esc(statusLabel(S.closure.outcome)) : "Not run"}</div><div class="l">latest evidence check</div></div>
       </div>
-      <div><p class="hint" style="margin-bottom:6px">Last ${at.tail.length} entries, newest at the bottom:</p>
-        <div class="ledger">${at.tail.map(e => `<div>
-          <span class="ag">${esc(e.agent)}</span>
-          <span class="sp">${esc(e.step)}${e.obligation_id ? " · " + esc(e.obligation_id) : ""}${e.tenant_id ? " · " + esc(e.tenant_id) : ""}</span>
-        </div>`).join("")}</div></div>
-      <div class="note">Agents that wrote during this run: ${at.agents_seen.map(x => `<code>${esc(x)}</code>`).join(" ")}.
-        The open band appears here as well as the tenant band — TARA records what it read, not only what it decided.</div>
+      <div class="card pad proof-story">
+        <div><span>1</span><p><b>Source checked</b><br>The rule change and its source fingerprints were recorded.</p></div>
+        <div><span>2</span><p><b>Case matched</b><br>The person's facts were checked without filling in missing information.</p></div>
+        <div><span>3</span><p><b>Plan created</b><br>Applicable requirements became dated, reviewable tasks.</p></div>
+        <div><span>4</span><p><b>Evidence tested</b><br>The submitted calculation was accepted or returned with a reason.</p></div>
+      </div>
       ${verification ? `<div class="card pad stack">
-        <div class="row" style="align-items:center;gap:10px"><span class="st st-${S.closure && S.closure.outcome === "closed" ? "closed" : "returned"}">latest ANCHOR check</span>
-          <b>${verification.entries_added || 0} evidence event${verification.entries_added === 1 ? "" : "s"} returned</b>
-          <span class="hint">server trace ${verification.chain_verified ? "verified" : "not verified"}</span></div>
-        <div class="ledger">${(verification.tail || []).map(e => `<div>
-          <span class="ag">${esc(e.agent)}</span>
-          <span class="sp">${esc(e.step)}${e.obligation_id ? " · " + esc(e.obligation_id) : ""}${e.tenant_id ? " · " + esc(e.tenant_id) : ""}</span>
-        </div>`).join("")}</div>
-        <p class="hint">The verification API rebuilds the case server-side before checking the submission. Its trace is kept separate from the original scan rather than merged into a claim of durable, shared audit storage.</p>
+        <div class="row" style="align-items:center;gap:10px"><span class="st st-${S.closure && S.closure.outcome === "closed" ? "closed" : "returned"}">${esc(statusLabel(S.closure ? S.closure.outcome : "returned"))}</span>
+          <b>Latest evidence check recorded</b>
+          <span class="hint">record integrity ${verification.chain_verified ? "passed" : "failed"}</span></div>
+        <p class="hint">The evidence check rebuilds the prepared case before reviewing the submission. Its record is shown separately so this prototype does not claim to be a shared production audit system.</p>
       </div>` : ""}
+      <details class="card matrix-details"><summary><b>See the technical event log</b><span>Internal role names and references for reviewers.</span></summary>
+        <div class="pad stack">
+          <p class="technical-ref">${at.entry_count} recorded events · ${at.agents_seen.length} specialist roles · integrity ${at.chain_verified ? "passed" : "failed"}</p>
+          <div class="ledger">${at.tail.map(e => `<div><span class="ag">${esc(e.agent)}</span><span class="sp">${esc(titleCase(e.step))}${e.obligation_id ? " · " + esc(e.obligation_id) : ""}${e.tenant_id ? " · " + esc(e.tenant_id) : ""}</span></div>`).join("")}</div>
+          ${verification ? `<div class="ledger">${(verification.tail || []).map(e => `<div><span class="ag">${esc(e.agent)}</span><span class="sp">${esc(titleCase(e.step))}${e.obligation_id ? " · " + esc(e.obligation_id) : ""}${e.tenant_id ? " · " + esc(e.tenant_id) : ""}</span></div>`).join("")}</div>` : ""}
+          <p class="technical-ref">Internal roles used in this run: ${at.agents_seen.map(x => `<code>${esc(x)}</code>`).join(" ")}</p>
+        </div>
+      </details>
       <div class="card pad stack">
-        <h3 style="font-size:var(--step-1)">That is the whole loop</h3>
-        <p class="lede" style="font-size:var(--step-0)">Source text → cited obligation → does it apply to you → what is
-        missing → what to do and by when → is your proof good enough → an inspectable trace of the sequence. Adding an
-        approved regime begins with a YAML pack and source snapshots; it also requires domain review and regression
-        tests before it belongs in a real workflow.</p>
-        <div class="row"><button class="btn" id="again" type="button">Run someone else</button>
-          <button class="btn ghost" data-goto="4" type="button">Back to the survey</button></div>
+        <h3 style="font-size:var(--step-1)">The complete prototype journey</h3>
+        <p class="lede" style="font-size:var(--step-0)">A changed rule became a clear decision, an action plan, a checked piece of evidence, and an inspectable record. A qualified human remains responsible for approving real-world action.</p>
+        <div class="row"><button class="btn" id="again" type="button">Try another example</button>
+          <button class="btn ghost" data-goto="4" type="button">Back to results</button></div>
       </div>
     </div>`;
 }
@@ -1021,8 +1178,8 @@ document.addEventListener("click", async ev => {
 
   if (t.id === "btnEngine") {
     const url = prompt(
-      "Engine URL for the live TARA API (leave empty to force captured replay):\n\n" +
-      "e.g. https://tara-demo.onrender.com", S.api || "");
+      "Live calculation service URL (leave empty to use the prepared backup):\n\n" +
+      "Example: https://tara-demo.onrender.com", S.api || "");
     if (url === null) return;
     S.api = url.trim().replace(/\/+$/, "");
     try { localStorage.setItem(LS_KEY, S.api); } catch (e) {}

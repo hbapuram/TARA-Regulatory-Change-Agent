@@ -6,15 +6,15 @@ TARA answers a focused question: **a rule changed—who is affected, what should
 
 ```mermaid
 flowchart LR
-    A[Versioned source changes] --> B[Cited obligation changes]
-    B --> C{Does this obligation apply?}
-    C -->|Missing fact| D[Indeterminate: ask, do not guess]
-    C -->|No| E[Not applicable: record why]
-    C -->|Yes| F[Owner + action date + evidence contract]
-    F --> G{Evidence exact?}
-    G -->|No| H[Return with reason]
-    G -->|Yes| I[Close]
-    A & B & C & F & G --> J[(ATLAS audit chain)]
+    A[A rule changes] --> B[TARA shows the exact difference]
+    B --> C{Does it affect this person?}
+    C -->|Information missing| D[Ask; do not guess]
+    C -->|No| E[Explain why it does not apply]
+    C -->|Yes| F[Create a dated action plan]
+    F --> G{Is the evidence correct?}
+    G -->|No| H[Return it with a clear reason]
+    G -->|Yes| I[Mark it ready for human review]
+    A & B & C & F & G --> J[(Keep an inspectable proof record)]
 ```
 
 ## Start here
@@ -25,6 +25,7 @@ flowchart LR
 | [Complete visual guide](https://tara-demo.onrender.com/guide) | One-stop explanation: picture first, technical detail second; source lives at `docs/tara-project-guide.html`. |
 | [Evaluation card](docs/evaluation-card.md) | Reproducible acceptance checks and the current evidence-based readiness score. |
 | [Competition truth sheet](docs/competition-truth-sheet.md) | Canonical claims, boundaries, and presenter preflight. |
+| [Judge-facing slide checklist](docs/judge-slide-checklist.md) | Seven-minute deck structure mapped to the official four judging areas. |
 | [Demo runbook](demo/README.md) | Local launch, replay generation, and venue fallback. |
 
 ## The tested judge path
@@ -32,12 +33,12 @@ flowchart LR
 The primary demonstration is deliberately narrow and synthetic:
 
 1. Revenue guidance changes the fund-tax rate in **Section 4.3** from **41% to 38%** for deemed disposals arising on or after **1 January 2026**.
-2. SURVEY identifies the amended provision and preserves both source hashes.
-3. LEGEND produces the cited old and new obligations.
-4. PLOT selects the version that applies on the holding's event date: 41% before 2026, 38% from 2026.
-5. COURSE creates a dated, owned action with an explicit evidence contract.
-6. ANCHOR returns a 41% calculation and closes an exact 38% calculation.
-7. ATLAS verifies the linked history of the run.
+2. TARA shows the old wording and the new wording side by side, while keeping digital fingerprints of both sources.
+3. It preserves the former and current rule instead of overwriting history.
+4. It uses the holding's event date to select 41% before 2026 or 38% from 2026.
+5. It creates a clear action plan with dates and the evidence to keep.
+6. It rejects a calculation using the old 41% rate and accepts an exact 38% calculation.
+7. It verifies the linked proof record for the run.
 
 The browser labels **Maeve** as the recommended path. Ciarán, Priya, and Arun are exploratory breadth cases and must not be described as independently validated legal advice.
 
@@ -227,9 +228,9 @@ The highest-value next steps are an independent review of the Maeve rule path, f
 
 ## Presentation guidance
 
-Lead with the concrete failure: **an internally consistent 41% calculation is wrong for a 2026 event**. Show the source diff, effective-date decision, returned evidence, accepted evidence, and ATLAS trace. Only then explain nine agents, nine packs, and MCP.
+Lead with the concrete failure: **an internally consistent 41% calculation is wrong for a 2026 event**. Show **What changed**, **What applies**, the **Action plan**, the evidence that **Needs correction**, the evidence that is **Accepted**, and the **Proof record**. Only then explain the nine agents, nine rule packs, and Model Context Protocol integration.
 
-For slide decks, the safest live-demo embed is a button or QR code to [https://tara-demo.onrender.com/](https://tara-demo.onrender.com/), plus two static backup screenshots. Embedded web views are optional and depend on venue networking and presentation software.
+For slide decks, the safest live-demo embed is a button or QR code to [https://tara-demo.onrender.com/](https://tara-demo.onrender.com/), plus two static backup screenshots. Embedded web views are optional and depend on venue networking and presentation software. The [judge-facing slide checklist](docs/judge-slide-checklist.md) maps the story to the official four judging areas.
 
 ## License
 

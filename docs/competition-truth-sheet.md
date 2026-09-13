@@ -10,13 +10,13 @@ TARA is a **prototype for turning a versioned regulatory-source change into a cl
 flowchart LR
     A[41% source rule] --> B[38% source rule]
     B --> C{Event date?}
-    C -- Before 2026 --> D[41% historical obligation]
-    C -- 2026 or later --> E[38% current obligation]
-    E --> F[Action + evidence request]
-    F --> G{Evidence exact?}
-    G -- 41% --> H[Returned]
-    G -- 38% --> I[Closed]
-    A & B & C & F & G --> J[(ATLAS trace)]
+    C -- Before 2026 --> D[Keep the former 41% rule]
+    C -- 2026 or later --> E[Use the current 38% rule]
+    E --> F[Clear action plan]
+    F --> G{Evidence correct?}
+    G -- 41% --> H[Needs correction]
+    G -- 38% --> I[Accepted]
+    A & B & C & F & G --> J[(Inspectable proof record)]
 ```
 
 ## Canonical public facts
@@ -63,7 +63,7 @@ flowchart LR
 
 1. Open the demo and health URLs early enough to wake Render.
 2. Choose **Maeve** and do not edit the case during a timed pitch.
-3. Confirm the Section 4.3 diff, 38% suggested artefact, 41% return, 38% closure, and ATLAS chain all match the script.
+3. Confirm the Before / Now comparison, 38% suggested evidence, 41% **Needs correction**, 38% **Accepted**, and passed proof-record check all match the script.
 4. Keep the labelled replay, a short recording, and two screenshots ready.
 5. Switch immediately to replay or screenshots if the host is cold or any expected result differs.
 6. End by stating the synthetic-data and professional-review boundary.

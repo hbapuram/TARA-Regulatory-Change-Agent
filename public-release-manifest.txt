@@ -19,6 +19,7 @@ docs/tara-project-guide.html
 docs/agent-walkthrough.html
 docs/agent-walkthrough2.md
 docs/evaluation-card.md
+docs/judge-slide-checklist.md
 docs/competition-truth-sheet.md
 docs/connecting-ai-clients.md
 docs/reliability-notes.md

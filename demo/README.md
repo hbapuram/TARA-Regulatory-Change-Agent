@@ -5,9 +5,9 @@
 The browser demonstrates the real TARA pipeline. The recommended judge route is:
 
 ```text
-Maeve → Section 4.3 source diff → 2026 effective-date selection
-      → dated Playbook → submit 41% (returned) → submit 38% (closed)
-      → inspect ATLAS trace
+Maeve → see 41% become 38% → see why the current rule applies
+      → follow the action plan → try 41% (needs correction)
+      → restore 38% (accepted) → inspect the proof record
 ```
 
 Maeve is the **tested golden path**. Ciarán, Priya, and Arun are clearly labelled exploratory breadth cases.
@@ -48,7 +48,7 @@ The free Render service may need time to wake. Open it before presenting.
 
 ## What is computed
 
-The page does not invent determinations, action dates, citations, or closure results. It calls:
+The page does not invent decisions, action dates, citations, or evidence results. The main interface uses plain language; internal role names and requirement IDs appear only in optional technical details. Underneath, it calls:
 
 - `tara.pipeline`
 - `meridian.survey`
@@ -74,12 +74,12 @@ The capture script calls `/api/run` and `/api/verify`; it does not compose resul
 
 1. Confirm the health endpoint returns `{"ok": true, ...}`.
 2. Choose **Maeve**.
-3. Show the Section 4.3 diff and both hashes.
-4. Explain that 2025 selects 41% while 2026 selects 38%.
-5. Open the Playbook and evidence contract.
-6. Submit the 41% variant and show `returned`.
-7. Submit the 38% variant and show `closed`.
-8. Open the ATLAS trace.
+3. Show the **Before / Now** rule change. Leave the source hashes collapsed unless asked.
+4. Open **What applies** and explain that Maeve's 2026 event selects 38% rather than 41%.
+5. Open the **Action plan** and point to the task, date, and evidence required.
+6. In **Check evidence**, apply the 41% example and show **Needs correction**.
+7. Restore the 38% example and show **Accepted**.
+8. Open the **Proof record**. Leave the technical event log collapsed unless asked.
 9. If the network fails, continue in the clearly labelled replay mode.
 
 ## Slide-deck embedding

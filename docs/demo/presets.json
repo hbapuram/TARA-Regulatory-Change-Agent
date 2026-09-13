@@ -2,8 +2,8 @@
   {
     "id": "maeve",
     "name": "Maeve",
-    "tagline": "Recommended: one rule change, one affected holding, one verified response",
-    "story": "Tested judge path: Revenue's fund-tax rate changes from 41% to 38%; TARA selects the post-2026 rule, dates the work, rejects the old rate, and records the trace.",
+    "tagline": "Recommended: see one tax-rate change become a clear action plan",
+    "story": "Maeve holds an offshore fund. The tax rate changes from 41% to 38%, so TARA works out which rate applies, what she needs to do, and whether her calculation is correct.",
     "recommended": true,
     "start_stage": 3,
     "focus_domain_id": "tax",
@@ -25,8 +25,8 @@
   {
     "id": "ciaran",
     "name": "Ciarán",
-    "tagline": "Exploratory: Irish citizen, US tax resident, sold a Dublin house",
-    "story": "Exploratory breadth case: TARA links an Irish property disposal, a US reporting profile, and the Ireland-US tax-credit corridor while keeping threshold assumptions visible.",
+    "tagline": "Explore: an Irish citizen living in the US sells a Dublin home",
+    "story": "See how one property sale can create Irish tax steps, US reporting questions, and a possible cross-border tax credit.",
     "holder": {
       "holder_id": "H-201", "name": "Ciarán",
       "citizenships": ["Ireland"], "tax_residencies": ["United States"],
@@ -48,8 +48,8 @@
   {
     "id": "priya",
     "name": "Priya",
-    "tagline": "Exploratory: Indian citizen, Irish tax resident, assets in both countries",
-    "story": "Exploratory breadth case: India-source income opens a DTAA relief path; the FEMA bank-account duty is explicitly ruled out because this case includes no Indian bank account.",
+    "tagline": "Explore: an Indian citizen living in Ireland has assets in both countries",
+    "story": "See which Indian and Irish rules apply, which do not, and where tax-treaty documents may help prevent double taxation.",
     "holder": {
       "holder_id": "H-301", "name": "Priya",
       "citizenships": ["India"], "tax_residencies": ["Ireland"],
@@ -73,8 +73,8 @@
   {
     "id": "arun",
     "name": "Arun",
-    "tagline": "Exploratory: Irish immigration renewal plus fund rules",
-    "story": "Exploratory multi-domain case: immigration renewal and Irish fund rules appear together through the same agent pipeline.",
+    "tagline": "Explore: an Irish residence renewal and an offshore fund",
+    "story": "See immigration and tax tasks brought into one simple action plan, with each result explained separately.",
     "holder": {
       "holder_id": "H-401", "name": "Arun",
       "citizenships": ["India"], "tax_residencies": ["Ireland"],

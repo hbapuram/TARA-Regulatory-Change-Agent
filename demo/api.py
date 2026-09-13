@@ -756,6 +756,14 @@ def evaluation_card() -> Any:
     raise HTTPException(status_code=404, detail="Evaluation card is not available in this build.")
 
 
+@app.get("/judge-slide-checklist.md")
+def judge_slide_checklist() -> Any:
+    page = REPO_ROOT / "docs" / "judge-slide-checklist.md"
+    if page.exists():
+        return FileResponse(page, media_type="text/markdown")
+    raise HTTPException(status_code=404, detail="Judge slide checklist is not available in this build.")
+
+
 # Serve the wizard's own files (app.js, replay.js, presets.json) from the same
 # origin, so a single deploy gives both the engine and a working demo page.
 # Mounted last: every /api route above is matched first.

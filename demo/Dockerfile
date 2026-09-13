@@ -19,7 +19,7 @@ COPY domains/ domains/
 COPY registers/ registers/
 COPY data/ data/
 COPY demo/ demo/
-COPY docs/tara-project-guide.html docs/evaluation-card.md docs/
+COPY docs/tara-project-guide.html docs/evaluation-card.md docs/judge-slide-checklist.md docs/
 RUN pip install --no-cache-dir --no-deps -e .
 
 EXPOSE 8000

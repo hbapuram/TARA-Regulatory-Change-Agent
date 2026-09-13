@@ -38,10 +38,13 @@ def test_recommended_preset_is_the_certified_maeve_path():
 def test_public_reference_routes_are_served_from_the_canonical_origin():
     guide = CLIENT.get("/guide")
     card = CLIENT.get("/evaluation-card.md")
+    checklist = CLIENT.get("/judge-slide-checklist.md")
     assert guide.status_code == 200
     assert "TARA — Complete Project Guide" in guide.text
     assert card.status_code == 200
     assert "# TARA Evaluation Card" in card.text
+    assert checklist.status_code == 200
+    assert "# TARA Judge-Facing Slide Deck Checklist" in checklist.text
 
 
 def test_maeve_run_selects_38_percent_and_not_41_percent():

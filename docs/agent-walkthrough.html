@@ -295,24 +295,24 @@
     <div class="keynote"><h4>One sentence</h4><p>TARA turns a changed, cited rule into a case-specific, dated, human-reviewable action and checks the evidence used to close it.</p></div>
     <div class="card"><div class="score">87</div><div class="score-note">/100 internal competition-readiness estimate—not an organiser score. External validation is the main remaining gap.</div></div>
   </div>
-  <div class="cta-row"><a class="cta" href="https://tara-demo.onrender.com/">Open the live demo</a><a class="cta secondary" href="evaluation-card.md">Read the evaluation card</a></div>
+  <div class="cta-row"><a class="cta" href="https://tara-demo.onrender.com/">Open the live demo</a><a class="cta secondary" href="judge-slide-checklist.md">Use the judge deck checklist</a><a class="cta secondary" href="evaluation-card.md">Read the evaluation card</a></div>
 </section>
 
 <section id="judge">
-  <h2><span class="num">02</span>The five-minute judge path</h2>
-  <p class="lede">Use one narrow case to prove the full loop before showing the broader platform.</p>
+  <h2><span class="num">02</span>The 90-second judge demo</h2>
+  <p class="lede">Use one narrow case to prove the full loop before showing the broader platform. The interface now keeps internal IDs and agent names inside optional technical details.</p>
   <div class="persona">
     <div class="persona-card"><h4>The synthetic person</h4><div class="fact-row"><span class="k">Name</span><span class="v">Maeve</span></div><div class="fact-row"><span class="k">Tax resident</span><span class="v">Ireland</span></div><div class="fact-row"><span class="k">Holding</span><span class="v">Luxembourg offshore fund</span></div><div class="fact-row"><span class="k">Acquired</span><span class="v">15 Aug 2018</span></div><div class="fact-row"><span class="k">8-year event</span><span class="v">15 Aug 2026</span></div></div>
     <div class="persona-card"><h4>The source change</h4><div class="fact-row"><span class="k">Provision</span><span class="v">Section 4.3</span></div><div class="fact-row"><span class="k">Old rule</span><span class="v">41%</span></div><div class="fact-row"><span class="k">New rule</span><span class="v">38%</span></div><div class="fact-row"><span class="k">Effective</span><span class="v">1 Jan 2026</span></div><div class="fact-row"><span class="k">Expected tax on €12k</span><span class="v">€4,560</span></div></div>
   </div>
   <ol class="step-list">
-    <li><b>Open Maeve.</b> The demo deliberately starts with the source diff, not a wall of profile fields.</li>
-    <li><b>Point at both SHA-256 values.</b> TARA can show exactly which two source snapshots were compared.</li>
-    <li><b>Show effective-date selection.</b> A 2025 event keeps 41%; a 2026 event uses 38%. This is covered by executable tests.</li>
-    <li><b>Open the Playbook.</b> The action has an owner, a derived date, a citation, and the evidence contract.</li>
-    <li><b>Submit 41%.</b> ANCHOR returns it even though the arithmetic is internally correct.</li>
-    <li><b>Submit 38%.</b> ANCHOR closes the action only when the rate and arithmetic are exact.</li>
-    <li><b>Open ATLAS.</b> Show the source read, obligation, applicability, action, and closure in the verified chain.</li>
+    <li><b>Open Maeve.</b> The demo starts with a simple Before / Now comparison, not a wall of profile fields.</li>
+    <li><b>Show what changed.</b> The source moved from 41% to 38%; hashes and exact source text remain available only if a judge asks.</li>
+    <li><b>Show what applies.</b> Maeve's 2026 event selects the current 38% rule and creates four next steps.</li>
+    <li><b>Open the Action plan.</b> Point to the task, date, source link, and evidence to keep.</li>
+    <li><b>Try 41%.</b> The evidence screen says Needs correction even though the arithmetic is internally consistent.</li>
+    <li><b>Restore 38%.</b> The evidence is accepted only when the current rate and arithmetic are exact.</li>
+    <li><b>Open the Proof record.</b> Show the completed source-to-action record and passed tamper check.</li>
   </ol>
   <div class="honest"><h4>Presenter rule</h4><p>Call Maeve the <b>tested golden path</b>. Call Ciarán, Priya, and Arun <b>exploratory breadth cases</b>. Do not claim the whole legal domain is validated because one path is tested.</p></div>
 </section>

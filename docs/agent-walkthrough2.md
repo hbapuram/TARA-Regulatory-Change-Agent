@@ -63,7 +63,7 @@ PLOT can return `satisfied`, `partial`, `absent`, `not_applicable`, or `indeterm
 - A deployed FastAPI/browser demonstration.
 - A captured-response replay for venue reliability.
 - Deterministic source diffs, date calculations, applicability checks, and evidence validation.
-- A hash-linked ATLAS trace.
+- A hash-linked proof record.
 - 112 passing automated tests.
 - Eight executable acceptance checks in `tools/build_evaluation_card.py`.
 
@@ -104,6 +104,8 @@ python -m uvicorn demo.api:app --host 127.0.0.1 --port 8000
 
 ## Present it
 
-Lead with Maeve and the wrong-but-consistent 41% calculation. Show the source diff, the effective-date decision, the returned evidence, the accepted evidence, and the ATLAS trace. Only then explain the nine agents, nine packs, and MCP layer.
+Lead with Maeve and the wrong-but-consistent 41% calculation. Show **What changed**, **What applies**, the **Action plan**, the evidence that **Needs correction**, the evidence that is **Accepted**, and the **Proof record**. Only then explain the nine agents, nine rule packs, and Model Context Protocol integration.
 
 For a slide deck, use a hyperlink or QR code to [https://tara-demo.onrender.com/](https://tara-demo.onrender.com/) and keep two backup screenshots. Do not rely only on an embedded live web view.
+
+Use the [judge-facing slide checklist](judge-slide-checklist.md) to map the seven-minute pitch to the official Problem & Customer, Solution, Commercial Focus, and Build with AI criteria.
