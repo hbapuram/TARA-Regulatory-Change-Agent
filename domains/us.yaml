@@ -1,0 +1,212 @@
+# domains/us.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+# Problem statement: foreign account & foreign asset reporting for "United
+# States persons" — FBAR (FinCEN Form 114) and FATCA (Form 8938).
+#
+# Standalone, single-jurisdiction pack — same shape and same agents as
+# domains/tax.yaml and domains/india.yaml. US reporting obligations are
+# scoped by citizenship (or residency), not by where the person is tax
+# resident today — modeled here by keying the scoping question off
+# `citizenships`, deliberately not `tax_residencies`, since a US citizen who
+# is tax resident abroad remains a "United States person" under this
+# guidance.
+
+domain_id: us-fbar
+title: Foreign Account & Asset Reporting — FBAR (FinCEN Form 114) & FATCA (Form 8938)
+sector: Finance & Insurance
+
+# ─────────────────────────── OPEN — same for every tenant ───────────────────────────
+open:
+
+  sources:
+    - source_id: fincen-fbar-fatca
+      instrument: "FinCEN Form 114 Instructions (FBAR) & IRS Form 8938 Instructions (FATCA)"
+      issuing_authority: "Financial Crimes Enforcement Network / Internal Revenue Service"
+      url: "https://www.fincen.gov/report-foreign-bank-and-financial-accounts"
+      v1_path: data/sources/us_fbar_fatca_v1.txt
+      v2_path: data/sources/us_fbar_fatca_v2.txt
+      last_verified: "2026-08-20"
+      max_verification_age_days: 120
+
+    # Both sources below were added as part of the "handful more per
+    # country" breadth pass (2026-09-10), then checked against
+    # irs.gov/instructions/i3520 and irs.gov/forms-pubs/about-form-8621 —
+    # filing triggers (grantor-trust ownership, distributions, foreign
+    # gifts/bequests above the reporting threshold for 3520; PFIC
+    # distributions, gain on disposition, and QEF/mark-to-market elections
+    # for 8621) confirmed against the current instructions.
+    - source_id: irs-form-3520
+      instrument: "IRS Form 3520 Instructions (Annual Return to Report Transactions With Foreign Trusts and Receipt of Certain Foreign Gifts)"
+      issuing_authority: "Internal Revenue Service"
+      url: "https://www.irs.gov/forms-pubs/about-form-3520"
+      v1_path: data/sources/us_form3520_v1.txt
+      v2_path: data/sources/us_form3520_v2.txt
+      last_verified: "2026-09-10"
+      max_verification_age_days: 120
+
+    - source_id: irs-form-8621
+      instrument: "IRS Form 8621 Instructions (Information Return by a Shareholder of a Passive Foreign Investment Company or Qualified Electing Fund)"
+      issuing_authority: "Internal Revenue Service"
+      url: "https://www.irs.gov/forms-pubs/about-form-8621"
+      v1_path: data/sources/us_form8621_v1.txt
+      v2_path: data/sources/us_form8621_v2.txt
+      last_verified: "2026-09-10"
+      max_verification_age_days: 120
+
+  obligations:
+    - obligation_id: OBL-US-001
+      provision: "Section 3.2"
+      source_id: fincen-fbar-fatca
+      text: >
+        A United States person who has a financial interest in, or signature
+        authority over, one or more foreign financial accounts must file
+        FinCEN Form 114 (the FBAR) for any calendar year in which the
+        aggregate value of those accounts exceeded USD 10,000 at any time
+        during the year.
+      severity: high
+      artefact_type: fbar_filing
+      depends_on: []
+      applies_when:
+        - field: instrument_type
+          operator: equals
+          value: foreign_bank_account
+        - field: peak_aggregate_value_usd
+          operator: gt
+          value: 10000
+
+    - obligation_id: OBL-US-002
+      provision: "Section 3.3"
+      source_id: fincen-fbar-fatca
+      text: >
+        A specified individual holding specified foreign financial assets
+        with an aggregate value above the applicable reporting threshold
+        must attach Form 8938 to their federal income tax return for that
+        year, in addition to any FBAR filing required.
+      severity: high
+      artefact_type: form_8938_filing
+      depends_on: []
+      applies_when:
+        - field: fatca_threshold_met
+          operator: equals
+          value: true
+
+    - obligation_id: OBL-US-003
+      provision: "Section 4.1"
+      source_id: irs-form-3520
+      text: >
+        A United States person who, during the taxable year, receives a
+        distribution from a foreign trust, is treated as the owner of any
+        part of a foreign trust under the grantor trust rules, or receives
+        foreign gifts or bequests from a nonresident alien individual or
+        foreign estate exceeding the applicable reporting threshold, must
+        file Form 3520 for that taxable year, separately from and in
+        addition to any FBAR or Form 8938 filing otherwise required.
+      severity: high
+      artefact_type: form_3520_filing
+      depends_on: []
+      applies_when:
+        - field: form_3520_reportable_event
+          operator: equals
+          value: true
+
+    - obligation_id: OBL-US-004
+      provision: "Section 4.2"
+      source_id: irs-form-8621
+      text: >
+        A United States person who is a shareholder of a Passive Foreign
+        Investment Company (PFIC) — including a foreign mutual fund,
+        foreign ETF, or other foreign pooled investment vehicle — must file
+        Form 8621 for each taxable year in which the shareholder receives a
+        distribution from the PFIC, recognizes gain on a disposition of
+        PFIC stock, or makes certain elections with respect to the PFIC, in
+        addition to any FBAR or Form 8938 filing otherwise required.
+      severity: medium
+      artefact_type: form_8621_filing
+      depends_on: []
+      applies_when:
+        - field: instrument_type
+          operator: in
+          value: [offshore_fund, personal_portfolio_investment_undertaking]
+        - field: pfic_reportable_event
+          operator: equals
+          value: true
+
+# ─────────────────────────── TENANT — differs per customer ──────────────────────────
+tenant:
+
+  register_schema:
+    entity: holding
+    fields:
+      - holding_id
+      - instrument_type
+      - jurisdiction
+      - acquisition_date
+      - status
+      - citizenships       # holder-level fact, merged onto every holding — see TaraContext.holding()
+      - peak_aggregate_value_usd
+      - fatca_threshold_met
+      - form_3520_reportable_event
+      - pfic_reportable_event
+
+  scoping_questions:
+    - question_id: SQ-US-01
+      text: "Is the holder a US citizen or a US tax resident (a 'United States person' for FBAR/FATCA purposes)?"
+      answerable_from_register: true
+      # us_tax_person is derived, not a field anyone fills in on the
+      # register: TaraContext.holding() computes it as citizenship OR tax
+      # residency (see tara/mcp_server/context.py). Fixed 2026-09 — this
+      # question used to key off citizenship alone, which its own
+      # fail_reason_template already flagged as a known gap: a foreign
+      # national who becomes a US tax resident holding foreign accounts was
+      # returned EXEMPT here even though 26 U.S.C. § 7701(b) brings them
+      # into scope on the residency limb alone.
+      register_field: us_tax_person
+      provision: "Section 3.1"
+      expect:
+        equals: true
+      on_fail: EXEMPT
+      fail_reason_template: "Holder is neither a United States citizen nor a United States tax resident, so {provision} does not apply."
+
+  date_triggers:
+    - trigger_id: DT-US-01
+      obligation_id: OBL-US-001
+      description: "FBAR (FinCEN Form 114) falls due annually for the preceding calendar year's account balances."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+    - trigger_id: DT-US-02
+      obligation_id: OBL-US-002
+      description: "Form 8938 is filed with the federal income tax return on the same annual cycle as the FBAR."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+    - trigger_id: DT-US-03
+      obligation_id: OBL-US-003
+      description: "Form 3520 is filed annually, alongside the federal income tax return, for each taxable year a reportable foreign trust or gift transaction occurs."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+    - trigger_id: DT-US-04
+      obligation_id: OBL-US-004
+      description: "Form 8621 is filed annually, alongside the federal income tax return, for each taxable year a reportable PFIC event occurs."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+
+  evidence_rules:
+    OBL-US-001:
+      artefact_type: fbar_filing
+      required_fields: [calendar_year, peak_aggregate_value_usd]
+      lead_time_days: 45
+    OBL-US-002:
+      artefact_type: form_8938_filing
+      required_fields: [tax_year, specified_asset_value_usd]
+      lead_time_days: 45
+    OBL-US-003:
+      artefact_type: form_3520_filing
+      required_fields: [tax_year, foreign_trust_or_gift_description]
+      lead_time_days: 45
+    OBL-US-004:
+      artefact_type: form_8621_filing
+      required_fields: [tax_year, pfic_identifier]
+      lead_time_days: 45

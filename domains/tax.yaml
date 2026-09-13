@@ -1,0 +1,198 @@
+# domains/tax.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+# Problem statement: cross-border individual asset obligations, Ireland <-> India.
+#
+# The file is split along the same line as the architecture: everything under
+# `open` is computed once and is identical for every tenant subscribed to this
+# domain; everything under `tenant` differs per customer and needs a register,
+# a profile, and evidence to evaluate.
+
+domain_id: tax
+title: Personal portfolio investment undertakings & offshore funds — 8-year deemed disposal
+sector: Finance & Insurance
+
+# ─────────────────────────── OPEN — same for every tenant ───────────────────────────
+open:
+
+  sources:
+    - source_id: revenue-27-01a-02
+      instrument: "Tax and Duty Manual Part 27-01A-02"
+      issuing_authority: "Office of the Revenue Commissioners"
+      url: "https://www.revenue.ie/en/tax-professionals/tdm/income-tax-capital-gains-tax-corporation-tax/part-27/27-01a-02.pdf"
+      v1_path: data/sources/revenue_guidance_v1.txt
+      v2_path: data/sources/revenue_guidance_v2.txt
+      last_verified: "2026-09-10"
+      max_verification_age_days: 120
+
+  # Decomposed, individually testable obligations. LEGEND matches these to a
+  # SURVEY change_record by provision reference; it does not invent obligations
+  # that aren't catalogued here. One article -> several obligations, as in the
+  # brief.
+  obligations:
+    - obligation_id: OBL-001
+      provision: "Section 4.2"
+      source_id: revenue-27-01a-02
+      text: >
+        A deemed disposal and immediate reacquisition arises on the eighth
+        anniversary of acquisition, and recurs on each subsequent eighth
+        anniversary while the interest is held.
+      severity: high
+      artefact_type: deemed_disposal_computation
+      depends_on: []
+
+    - obligation_id: OBL-002
+      provision: "Section 4.3"
+      source_id: revenue-27-01a-02
+      text: >
+        Tax on the deemed gain is chargeable at the rate of 41 per cent.
+      severity: high
+      artefact_type: tax_computation
+      depends_on: ["OBL-001"]
+      superseded_by: OBL-002B
+      effective_to: "2025-12-31"
+
+    - obligation_id: OBL-002B
+      provision: "Section 4.3"
+      source_id: revenue-27-01a-02
+      text: >
+        Tax on the deemed gain is chargeable at the rate of 38 per cent, for
+        deemed disposals arising on or after 1 January 2026.
+      severity: high
+      artefact_type: tax_computation
+      depends_on: ["OBL-001"]
+      supersedes: OBL-002
+      introduced_in: v2
+      effective_from: "2026-01-01"
+
+    - obligation_id: OBL-003
+      provision: "Section 4.4"
+      source_id: revenue-27-01a-02
+      text: >
+        The deemed gain must be included in the return of income for the
+        chargeable period in which the eighth anniversary falls, with tax
+        paid by the specified return date.
+      severity: high
+      artefact_type: filed_return_receipt
+      depends_on: ["OBL-002", "OBL-002B"]
+
+    - obligation_id: OBL-004
+      provision: "Section 4.5"
+      source_id: revenue-27-01a-02
+      text: >
+        Documentary evidence of the deemed disposal computation and tax paid
+        must be retained to substantiate a credit claimed on a later actual
+        disposal.
+      severity: medium
+      artefact_type: valuation_statement
+      depends_on: ["OBL-001"]
+
+# ─────────────────────────── TENANT — differs per customer ──────────────────────────
+tenant:
+
+  register_schema:
+    entity: holding
+    fields:
+      - holding_id
+      - instrument_type      # personal_portfolio_investment_undertaking | offshore_fund | foreign_life_assurance_policy
+      - jurisdiction
+      - acquisition_date     # YYYY-MM-DD
+      - holder_residency     # from the holder profile, not the holding itself
+      - status               # held | disposed
+
+  # Each scoping question is a self-contained applicability rule: COMPASS
+  # walks this list in order and evaluates every question declaratively
+  # (expect / on_fail / fail_reason_template) — no scoping logic is
+  # hard-coded in tara/agents/compass.py. A new domain pack only needs its
+  # own list of questions shaped like these; the evaluator is generic.
+  scoping_questions:
+    - question_id: SQ-01
+      text: "Is the holder Irish tax resident or ordinarily resident?"
+      answerable_from_register: true
+      register_field: holder_residency
+      provision: "Section 4.1"
+      expect:
+        in: ["Irish tax resident", "Irish ordinarily resident"]
+      on_fail: EXEMPT
+      fail_reason_template: "Holder residency ({value}) is outside scope of {provision}."
+
+    - question_id: SQ-02
+      text: "Is the holding one of: personal portfolio investment undertaking, offshore fund, or foreign life assurance policy?"
+      answerable_from_register: true
+      register_field: instrument_type
+      provision: "Section 4.1"
+      expect:
+        in: ["personal_portfolio_investment_undertaking", "offshore_fund", "foreign_life_assurance_policy"]
+      on_fail: EXEMPT
+      fail_reason_template: "Instrument type ({value}) is not within {provision}."
+
+    - question_id: SQ-03
+      text: "Has the holder previously claimed the remittance basis of taxation for this holding?"
+      answerable_from_register: false   # deliberately absent — COMPASS must ask, not infer
+      register_field: null
+      provision: "Section 4.1"
+      expect:
+        equals: false
+      on_fail: INDETERMINATE
+      fail_reason_template: >-
+        Holder has claimed the remittance basis of taxation for this
+        holding; this domain pack does not model the remittance-basis case
+        under {provision} and a specialist determination is required.
+
+  # All four obligations arising from the deemed-disposal event fire on the
+  # same calendar trigger — the eighth anniversary of acquisition — because
+  # they are all consequences of the one event, not independent schedules.
+  date_triggers:
+    - trigger_id: DT-01
+      obligation_id: OBL-001
+      description: "Deemed disposal at the eighth anniversary of acquisition, recurring every 8 years."
+      base_field: acquisition_date
+      interval_years: 8
+      recurring: true
+    - trigger_id: DT-02
+      obligation_id: OBL-002
+      description: "Rate of charge applies at the same eighth-anniversary deemed disposal."
+      base_field: acquisition_date
+      interval_years: 8
+      recurring: true
+    - trigger_id: DT-02B
+      obligation_id: OBL-002B
+      description: "Rate of charge (post-2026 rate) applies at the same eighth-anniversary deemed disposal."
+      base_field: acquisition_date
+      interval_years: 8
+      recurring: true
+    - trigger_id: DT-03
+      obligation_id: OBL-003
+      description: "Return and payment fall due for the chargeable period containing the eighth anniversary."
+      base_field: acquisition_date
+      interval_years: 8
+      recurring: true
+    - trigger_id: DT-04
+      obligation_id: OBL-004
+      description: "Evidence of the deemed disposal computation must be retained from the same eighth anniversary."
+      base_field: acquisition_date
+      interval_years: 8
+      recurring: true
+
+  evidence_rules:
+    OBL-001:
+      artefact_type: deemed_disposal_computation
+      required_fields: [valuation_date, computed_gain]
+      lead_time_days: 75
+    OBL-002:
+      artefact_type: tax_computation
+      required_fields: [rate_applied, computed_tax]
+      expected_rate: 0.41
+      lead_time_days: 45
+    OBL-002B:
+      artefact_type: tax_computation
+      required_fields: [rate_applied, computed_tax]
+      expected_rate: 0.38
+      lead_time_days: 45
+    OBL-003:
+      artefact_type: filed_return_receipt
+      required_fields: [return_date, tax_paid_amount]
+      lead_time_days: 30
+    OBL-004:
+      artefact_type: valuation_statement
+      required_fields: [valuation_date, reference_number, computed_gain]
+      lead_time_days: 60

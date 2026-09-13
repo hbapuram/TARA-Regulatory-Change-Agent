@@ -1,0 +1,32 @@
+FinCEN Form 114 Instructions & Form 8938 Instructions — Report of Foreign
+Bank and Financial Accounts (FBAR) and Statement of Specified Foreign
+Financial Assets
+
+Instrument: FinCEN Form 114 Instructions (FBAR) & IRS Form 8938 Instructions (FATCA)
+Issuing authority: Financial Crimes Enforcement Network / Internal Revenue Service
+Provision: Section 3.2 — FBAR filing
+
+Section 3.1 — Application
+This guidance applies to a "United States person" — a citizen or resident of
+the United States, regardless of where that person is domiciled or tax
+resident under any other country's law. United States tax and reporting
+obligations under this section attach to citizenship (or US residency) and
+are not relieved by becoming tax resident of another country; they are
+separate from, and can run alongside, that other country's own rules. A
+person who is neither a US citizen nor a US resident is outside the scope of
+this guidance.
+
+Section 3.2 — FBAR filing
+A United States person who has a financial interest in, or signature
+authority over, one or more foreign financial accounts must file FinCEN Form
+114 (the "FBAR") for any calendar year in which the aggregate value of those
+accounts exceeded USD 10,000 at any time during the year.
+
+Section 3.3 — FATCA specified foreign financial asset reporting
+A specified individual within the scope of Section 3.1 who holds specified
+foreign financial assets with an aggregate value above the applicable
+reporting threshold must attach Form 8938 to their federal income tax return
+for that year, in addition to, and not instead of, any FBAR filing required
+under Section 3.2.
+
+Last verified: 2026-08-20

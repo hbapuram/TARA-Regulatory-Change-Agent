@@ -1,0 +1,33 @@
+IRS Form 1116 Instructions (Foreign Tax Credit) and the Convention between
+the Government of Ireland and the Government of the United States of America
+for the Avoidance of Double Taxation — combined corridor guidance for a
+holder who is both an Irish citizen and a United States tax resident
+
+Instrument: IRS Form 1116 Instructions (Foreign Tax Credit) +
+            Ireland-US Double Taxation Avoidance Convention, Article 24
+Issuing authority: Internal Revenue Service
+Provision: Section 2.1 — Foreign tax credit for Irish capital gains tax paid
+
+Section 2.1 — Application and the foreign tax credit
+This corridor guidance applies only to a holder who is, at the same time, an
+Irish citizen and a United States tax resident. Ireland charges capital
+gains tax on the disposal of Irish-situated land and buildings irrespective
+of the residence of the person disposing of it (see
+domains/ireland-cgt-property.yaml, Section 1.1) — Ireland does not exempt a
+US tax resident from this charge under the Ireland-US DTAA, because Article
+24 of that Convention relieves double taxation by the credit method, not the
+exemption method, for a US person's foreign-source income and gains. A
+United States person who has paid Irish capital gains tax on a gain that is
+also subject to US federal income tax on the same disposal may claim a
+foreign tax credit for the Irish tax paid, computed and claimed on Form
+1116, against their US tax liability on that gain, up to the Form 1116
+limitation.
+
+Section 2.2 — Substantiation
+The foreign tax credit claimed on Form 1116 must be substantiated with
+evidence of the foreign tax actually paid — in this case, the Irish Form CG1
+return and the receipt for the capital gains tax payment made to the Office
+of the Revenue Commissioners. This evidence must be retained and produced if
+the credit is examined; a credit claimed without it may be disallowed.
+
+Last verified: 2026-09-12

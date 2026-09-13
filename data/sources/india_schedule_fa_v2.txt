@@ -1,0 +1,41 @@
+Income Tax Return Instructions — Schedule FA (Foreign Assets) & Schedule FSI
+(Foreign Source Income)
+
+Instrument: Income Tax Return Instructions — Schedule FA & Schedule FSI
+Issuing authority: Central Board of Direct Taxes
+Provision: Section 2.2 — Schedule FA disclosure
+
+Section 2.1 — Application
+This guidance applies to an individual who is Resident and Ordinarily Resident
+(ROR) in India for the relevant assessment year, as determined under Section 6
+of the Income-tax Act, 1961. A Non-Resident (NR) or a Resident but Not
+Ordinarily Resident (RNOR) individual is outside the scope of Schedule FA —
+the foreign-asset disclosure obligation attaches to residential status, not to
+citizenship, and does not apply to an Indian citizen who is tax resident
+elsewhere.
+
+Section 2.2 — Schedule FA disclosure
+An individual within the scope of Section 2.1 who, at any time during the
+relevant accounting period (1 January to 31 December preceding the assessment
+year), holds a foreign asset — including a foreign bank account, foreign
+equity or debt interest, foreign immovable property, or any other financial
+interest in an entity located outside India — must disclose that asset in
+Schedule FA of the return of income for the corresponding assessment year,
+whether or not the asset produced any income during the period.
+
+Section 2.3 — Schedule FSI disclosure
+Income earned outside India by an individual within the scope of Section 2.1
+must be reported in Schedule FSI of the return of income, together with
+particulars of any foreign tax paid and any credit claimed against Indian tax
+under an applicable double taxation avoidance agreement.
+
+Section 2.4 — Beneficial ownership and beneficiary interests
+The Schedule FA disclosure obligation under Section 2.2 extends to an
+individual who holds a foreign asset as a beneficial owner or as a
+beneficiary, and not only where legal title is held directly. An individual
+within the scope of Section 2.1 who is a beneficial owner of, or a
+beneficiary in, a foreign trust, foreign entity or foreign account must
+disclose that interest in Schedule FA in the same manner as a directly-held
+asset, whether or not any distribution was received during the period.
+
+Last verified: 2026-08-15

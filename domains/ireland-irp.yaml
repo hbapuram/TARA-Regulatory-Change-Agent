@@ -1,0 +1,198 @@
+# domains/ireland-irp.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+# Problem statement: immigration registration & renewal for non-EEA/Swiss/UK
+# nationals resident in Ireland — Irish Residence Permit (IRP) registration,
+# renewal, and change-of-address notification.
+#
+# This is the "second, non-tax domain pack" proving TARA is domain-agnostic,
+# not a tax engine with an immigration label stuck on it: same shape, same
+# loader (tara/core/domain_pack.py), same four TENANT agents
+# (COMPASS/PLOT/COURSE/ANCHOR), same OPEN band (SURVEY/LEGEND/ALMANAC) as
+# domains/tax.yaml, india.yaml and us.yaml — nothing about compass.py,
+# plot.py, course.py or anchor.py changed to add this pack. A regulator with
+# a scoping question, a date-driven deadline, and an evidence rule is a
+# domain pack here, whatever sector it comes from.
+#
+# Standalone, single-jurisdiction pack — independently queryable, exactly
+# like india.yaml and us.yaml. Not a corridor: applicability turns on the
+# holder's own immigration status (not an EEA/Swiss/UK national), not on a
+# combination of two countries' facts, so `corridor` is omitted.
+#
+# One obligation here (OBL-IRP-003) is deliberately built with NO
+# date_trigger: ISD guidance (see data/sources/ireland_irp_v1.txt, Section
+# 1.3) does not publish a fixed number of days within which a change of
+# address must be notified. Rather than inventing a number — the mistake
+# already caught once this engagement (an earlier draft's fabricated
+# Form 67 deadline) — this pack reports the obligation as real and
+# applicable, with no derivable deadline, so COURSE escalates it for a human
+# to schedule rather than silently asserting a false precision.
+#
+# A second instance of the same discipline, caught on review: OBL-IRP-002's
+# expiry date is NOT derived as "grant date + 1 year" — IRP terms vary and
+# the source never states a fixed duration, so inventing an annual cycle
+# would be exactly the over-precision this pack exists to avoid. Instead
+# irp_expiry_date is a real, explicit fact on the register entry (like
+# irp_registration_due_date), the same way a real system would hold the
+# actual expiry printed on the card. And the 84-day figure in ISD guidance
+# is when the renewal *window opens* (the earliest you may apply), not a
+# deadline — the actual statutory deadline is the expiry date itself, so
+# evidence_rules.OBL-IRP-002.lead_time_days is 0 (the derived deadline
+# equals the expiry date); the 84-day window is documented in the
+# obligation's own text instead of folded into deadline arithmetic it would
+# misrepresent.
+#
+# SQ-IRP-02 below gates this pack on the register entry actually being an
+# immigration permission — without it, every standalone pack (this one
+# included) is a candidate for every holding_id, and MERIDIAN would happily
+# attach an IRP renewal action to, say, a Luxembourg offshore fund, which
+# passes this pack's own eea_swiss_uk_national check on the strength of a
+# holder-level fact alone. This is the same mechanism domains/tax.yaml's
+# SQ-02 already uses to keep itself off obligations it has no business
+# touching — no new code, just a second scoping question.
+
+domain_id: ireland-irp
+title: Immigration Registration & Renewal — Irish Residence Permit (IRP)
+sector: Public Administration & Immigration
+
+# ─────────────────────────── OPEN — same for every tenant ───────────────────────────
+open:
+
+  sources:
+    - source_id: isd-irp-guidance
+      instrument: "Immigration Service Delivery — Registering Your Immigration Permission & Renewing Your Registration guidance"
+      issuing_authority: "Immigration Service Delivery (Department of Justice)"
+      url: "https://www.irishimmigration.ie/registering-your-immigration-permission/"
+      v1_path: data/sources/ireland_irp_v1.txt
+      v2_path: data/sources/ireland_irp_v2.txt
+      last_verified: "2026-09-10"
+      max_verification_age_days: 120
+
+  obligations:
+    - obligation_id: OBL-IRP-001
+      provision: "Section 1.1"
+      source_id: isd-irp-guidance
+      text: >
+        A non-EEA, non-Swiss, non-UK national who intends to remain in the
+        State for longer than 90 days must register their permission with
+        the Immigration Service Delivery (ISD) and be issued an Irish
+        Residence Permit (IRP) within 90 days of arrival in the State,
+        subject to payment of the applicable registration fee.
+      severity: high
+      artefact_type: irp_initial_registration
+      depends_on: []
+
+    - obligation_id: OBL-IRP-002
+      provision: "Section 1.2"
+      source_id: isd-irp-guidance
+      text: >
+        A registered non-EEA, non-Swiss, non-UK national whose IRP is
+        approaching its expiry date must renew their registration before
+        the current permission expires. ISD guidance permits a renewal
+        application to be submitted up to 12 weeks (84 days) before the
+        current permission's expiry date; where an application is
+        submitted during this window, the renewed permission takes effect
+        from the current permission's expiry date, not from the date the
+        renewal application was made.
+      severity: high
+      artefact_type: irp_renewal
+      depends_on: []
+
+    # No published statutory number of days for this notification (see
+    # data/sources/ireland_irp_v1.txt, Section 1.3) — deliberately no
+    # date_trigger below, rather than inventing one. See the file header.
+    - obligation_id: OBL-IRP-003
+      provision: "Section 1.3"
+      source_id: isd-irp-guidance
+      text: >
+        A registered non-EEA, non-Swiss, non-UK national must notify the
+        ISD of any change to their registered address, and of certain
+        other changes in personal circumstances, for as long as they hold
+        a permission to remain in the State. ISD guidance does not publish
+        a fixed number of days within which this notification must be
+        made.
+      severity: medium
+      artefact_type: irp_change_of_address_notification
+      depends_on: []
+
+# ─────────────────────────── TENANT — differs per customer ──────────────────────────
+tenant:
+
+  register_schema:
+    entity: holding
+    fields:
+      - holding_id
+      - instrument_type
+      - jurisdiction
+      - acquisition_date
+      - irp_registration_due_date
+      - irp_expiry_date
+      - status
+      - eea_swiss_uk_national     # holder-level fact, merged onto every holding — see TaraContext.holding()
+
+  scoping_questions:
+    - question_id: SQ-IRP-01
+      text: "Is the holder a non-EEA, non-Swiss, non-UK national (i.e. not exempt from Irish immigration registration)?"
+      answerable_from_register: true
+      register_field: eea_swiss_uk_national
+      provision: "Section 1.0"
+      expect:
+        equals: false
+      on_fail: EXEMPT
+      fail_reason_template: "Holder's EEA/Swiss/UK national status ({value}) means {provision} does not apply — EEA, Swiss and UK nationals are not required to register with the ISD."
+
+    - question_id: SQ-IRP-02
+      text: "Is the register entry an immigration permission (not an unrelated financial holding)?"
+      answerable_from_register: true
+      register_field: instrument_type
+      provision: "Section 1.0"
+      expect:
+        in: ["immigration_permission"]
+      on_fail: EXEMPT
+      fail_reason_template: "Register entry type ({value}) is not an immigration permission, so {provision} does not apply to it."
+
+  date_triggers:
+    # One-time: fires on the precomputed 90-days-from-arrival due date
+    # itself (a real field on the holding, not derived here — see the
+    # register entry's own note for how it was computed). interval_years is
+    # required by the loader but unused when recurring is false.
+    - trigger_id: DT-IRP-01
+      obligation_id: OBL-IRP-001
+      description: "Initial IRP registration falls due once, 90 days after arrival in the State (precomputed into irp_registration_due_date on the register entry)."
+      base_field: irp_registration_due_date
+      interval_years: 1
+      recurring: false
+    # Also one-time, not annual: irp_expiry_date is the current permission's
+    # actual, real expiry date (see the file header for why this is not
+    # derived as "grant date + N years"). When the holder renews, the
+    # register entry is updated with the new expiry — the same way a real
+    # system would replace one fact with its current value, rather than a
+    # recurrence formula manufacturing it.
+    - trigger_id: DT-IRP-02
+      obligation_id: OBL-IRP-002
+      description: "IRP renewal falls due once the current permission's actual expiry date (irp_expiry_date) is reached; the register is updated with a new expiry date each time the holder renews."
+      base_field: irp_expiry_date
+      interval_years: 1
+      recurring: false
+
+  evidence_rules:
+    OBL-IRP-001:
+      artefact_type: irp_initial_registration
+      required_fields: [registration_date, irp_number]
+      lead_time_days: 0
+    OBL-IRP-002:
+      artefact_type: irp_renewal
+      required_fields: [renewal_application_date, new_expiry_date]
+      # 0, not 84: the 84-day figure in ISD guidance is when the renewal
+      # window *opens* (the earliest you may apply), not a required lead
+      # time before a deadline — derive_backward_deadline (tara/core/dates.py)
+      # subtracts lead_time_days FROM the statutory date to get the
+      # actionable deadline, so treating 84 as a lead time would put the
+      # reported deadline 84 days before expiry, i.e. describe the permit as
+      # overdue for renewal while it's still comfortably valid. The actual
+      # statutory deadline is the expiry date itself; the 84-day window is
+      # stated in OBL-IRP-002's own text instead.
+      lead_time_days: 0
+    OBL-IRP-003:
+      artefact_type: irp_change_of_address_notification
+      required_fields: [new_address, notification_date]
+      lead_time_days: 0

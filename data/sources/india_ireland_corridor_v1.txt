@@ -1,0 +1,43 @@
+FEMA Master Direction on Deposits & Accounts (NRI provisions) and the
+Agreement between the Government of Ireland and the Government of the
+Republic of India for the Avoidance of Double Taxation — combined corridor
+guidance for a holder who is both an Indian citizen and an Irish tax
+resident
+
+Instrument: RBI Master Direction on Deposits & Accounts (NRI provisions) +
+            India-Ireland Double Taxation Avoidance Agreement (DTAA)
+Issuing authority: Reserve Bank of India / Central Board of Direct Taxes
+Provision: Section 6.2 — FEMA reclassification of resident accounts
+
+Section 6.1 — Application
+This corridor guidance applies only to a holder who is, at the same time, an
+Indian citizen and tax resident of Ireland. Neither fact alone brings a
+holder within this section: an Indian citizen who is also Indian tax
+resident is covered by domestic Indian guidance alone, and an Irish tax
+resident who is not an Indian citizen has no FEMA non-resident-account
+status to consider. It is the combination — citizenship of one jurisdiction,
+tax residency of the other — that gives rise to the obligations below, none
+of which appears in either jurisdiction's own single-country guidance.
+
+Section 6.2 — FEMA reclassification of resident accounts
+Under the Foreign Exchange Management Act, an Indian citizen who becomes
+resident outside India for tax purposes must not continue to hold a
+resident (domestic) savings account in India. Any such account must be
+redesignated as a Non-Resident Ordinary (NRO) account, or a Non-Resident
+External (NRE) account opened in its place, within a reasonable period of
+the change in residency status. Continuing to operate a resident account
+after ceasing to be an Indian tax resident is a contravention of FEMA
+regulations administered by the Reserve Bank of India.
+
+Section 6.3 — DTAA relief and Form 10F / Tax Residency Certificate
+Where India-source income (such as interest on an NRO account, or dividends
+from Indian equity) arises to a holder who is tax resident of Ireland under
+the India-Ireland Double Taxation Avoidance Agreement, relief from double
+taxation on that income — either by way of exemption or a reduced rate of
+withholding — may be claimed under the Agreement. To claim it, the holder
+must obtain a Tax Residency Certificate (TRC) from the Irish Revenue
+Commissioners for the relevant year and furnish it, together with a
+completed Form 10F, to the Indian payer or tax authority before the
+relief is applied.
+
+Last verified: 2026-08-25

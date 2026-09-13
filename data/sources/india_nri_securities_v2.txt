@@ -1,0 +1,58 @@
+CAPITAL GAINS TAX — TRANSFER OF LISTED SECURITIES BY A NON-RESIDENT INDIAN
+Central Board of Direct Taxes
+Consolidated extract for TARA domain pack `india-nri-securities`
+
+Note on recodification: the Income-tax Act, 2025 took effect 1 April 2026
+and renumbers most of the Income-tax Act, 1961. The provisions below are
+stated by their substance and their original 1961-Act section numbers
+(Sections 111A, 112A, 115, 139, 195), which are the numbers still used in
+practitioner guidance as of this drafting. Confirm the corresponding
+2025-Act section numbers against the CBDT's published concordance table
+before quoting them to a filer.
+
+Section 1.1 — Character of the gain
+Gain on the transfer of an equity share in a company, being a security
+listed on a recognised stock exchange in India in respect of which
+securities transaction tax has been paid, is a long-term capital gain where
+the share was held for more than twelve months immediately preceding the
+date of transfer, and a short-term capital gain otherwise. This
+classification applies to a non-resident transferor in the same way as to a
+resident.
+
+Section 1.2 — Rate of tax, short-term gain
+Short-term capital gain on the transfer of a security described in Section
+1.1 is chargeable to tax at 20 per cent, with effect from transfers made on
+or after 23 July 2024 (Finance (No. 2) Act, 2024). No deduction under
+Chapter VI-A is available against such gain.
+
+Section 1.3 — Rate of tax, long-term gain
+Long-term capital gain on the transfer of a security described in Section
+1.1 is chargeable to tax at 12.5 per cent, without indexation, with effect
+from transfers made on or after 23 July 2024. Long-term capital gains of up
+to Rs. 1,25,000 in a financial year, taken in aggregate across all such
+transfers by the individual in that year, are exempt.
+
+Section 1.4 — Deduction of tax at source
+A person responsible for paying any sum chargeable to tax to a non-resident
+must deduct tax at source at the rates in force at the time of payment or
+credit, whichever is earlier. Unlike a resident seller transacting through a
+recognised stock exchange, a non-resident's broker or depository
+participant is not relieved of this obligation merely because securities
+transaction tax has been paid on the transaction; tax is ordinarily withheld
+on the sale proceeds credited to the non-resident's account, and a
+certificate of the amount deducted must be issued to the non-resident.
+
+Section 1.5 — Return of income
+A non-resident individual to whom a capital gain described in this Section
+has accrued must furnish a return of income for the relevant assessment
+year, on Form ITR-2 (or Form ITR-3 where the individual also has income
+from a business or profession), on or before the due date applicable to
+that assessee under Section 139(1) — ordinarily 31 July following the close
+of the financial year for an assessee not required to have accounts
+audited, subject to any extension separately notified for that assessment
+year. The return is what reconciles tax already withheld under Section 1.4
+against the individual's actual liability computed under Sections 1.2 and
+1.3, and is required whether the withheld amount fully discharges the
+liability or not.
+
+Last verified: 2026-09-12

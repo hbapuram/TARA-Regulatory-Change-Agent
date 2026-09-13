@@ -1,0 +1,42 @@
+FEMA Master Direction on Deposits & Accounts (NRI provisions) and the
+Convention between the Government of the United States of America and the
+Government of the Republic of India for the Avoidance of Double Taxation —
+combined corridor guidance for a holder who is both an Indian citizen and a
+United States tax resident
+
+Instrument: RBI Master Direction on Deposits & Accounts (NRI provisions) +
+            India-US Double Taxation Avoidance Convention +
+            IRS Form 8802 / Form 6166 (US Certificate of Residency)
+Issuing authority: Reserve Bank of India / Central Board of Direct Taxes /
+                    Internal Revenue Service
+Provision: Section 3.1 — FEMA reclassification of resident accounts
+
+Section 3.1 — Application and FEMA reclassification of resident accounts
+This corridor guidance applies only to a holder who is, at the same time, an
+Indian citizen and a tax resident of the United States. Exactly as with the
+India-Ireland corridor, the FEMA reclassification duty does not turn on
+which country the holder became tax resident of — it turns on the fact of
+becoming a non-resident Indian for tax purposes at all. An Indian citizen
+who becomes resident outside India for tax purposes must not continue to
+hold a resident (domestic) savings account in India; any such account must
+be redesignated as a Non-Resident Ordinary (NRO) account, or a Non-Resident
+External (NRE) account opened in its place, within a reasonable period of
+the change in residency status. Continuing to operate a resident account
+after ceasing to be an Indian tax resident is a contravention of FEMA
+regulations administered by the Reserve Bank of India.
+
+Section 3.2 — DTAA relief, Form 10F and the US Certificate of Residency
+Where India-source income (such as interest on an NRO account, or dividends
+or capital gains from Indian securities) arises to a holder who is tax
+resident of the United States, relief from double taxation on that income
+may be claimed under the India-US DTAA. Indian domestic law (Income-tax Act,
+1961 ss. 90(4) and 90A(4)) conditions that relief on the holder furnishing a
+Tax Residency Certificate (TRC) issued by the country of residence. The
+United States does not issue a TRC in the Irish or Indian sense; the
+equivalent document is IRS Form 6166 (Certificate of U.S. Tax Residency),
+obtained by filing Form 8802 with the Internal Revenue Service. The holder
+must obtain Form 6166 for the relevant year and furnish it, together with a
+completed Form 10F, to the Indian payer or tax authority before the treaty
+relief is applied.
+
+Last verified: 2026-09-12

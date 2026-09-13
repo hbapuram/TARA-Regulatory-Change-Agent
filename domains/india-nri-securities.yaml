@@ -1,0 +1,210 @@
+# domains/india-nri-securities.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+#
+# Why this pack exists
+# --------------------
+# domains/india.yaml (Schedule FA/FSI) gates on the holder being Resident
+# and Ordinarily Resident (ROR) in India — it is a disclosure duty for
+# someone still tax resident there. It says nothing about the mirror-image
+# case: an Indian citizen who has become a non-resident (an NRI) but still
+# holds and trades Indian-listed securities. That person owes Indian
+# capital gains tax on the disposal itself, under a different mechanism
+# (withholding under Section 195, not disclosure under Schedule FA), and
+# files a different way (a capital-gains return, not a foreign-asset
+# schedule). This pack is that second, independent regime — proof the
+# architecture holds for two obligations that share a country and a holder
+# but not a legal basis, the same way ireland-cgt-property.yaml stands
+# apart from tax.yaml's 8-year deemed disposal regime.
+#
+# Scoped to Chapter XII-A "Non-Resident Indian" status specifically (an
+# individual who is an Indian citizen, transferring a listed, STT-paid
+# equity share) rather than every non-resident securities holder in
+# general (which would also sweep in, e.g., foreign institutional
+# investors under a different sub-regime this pack does not model).
+#
+# Rates verified 2026-09-12 against the CBDT's own capital-gains page
+# (incometaxindia.gov.in) and cross-checked against post-Finance (No. 2)
+# Act 2024 commentary: 20% STCG / 12.5% LTCG on STT-paid listed equity,
+# Rs. 1,25,000 annual LTCG exemption, effective for transfers on or after
+# 23 July 2024. See the header of data/sources/india_nri_securities_v1.txt
+# for the recodification caveat (Income-tax Act 2025, effective 1 April
+# 2026) — this pack states substance and 1961-Act section numbers, which
+# is what current practitioner guidance still uses; confirm the concordance
+# table before quoting a 2025-Act section number to a filer.
+#
+# Deliberately not exact-rate-checked by ANCHOR: unlike ireland-cgt-property
+# (a single settled 33% rate) or tax.yaml (a single rate per obligation,
+# amended by supersession), which rate applies here depends on the holding
+# period of the specific disposal being evidenced — a fact ANCHOR has no
+# independent way to verify against a submitted artefact without re-deriving
+# the holder's own filing. OBL-NRI-001 therefore checks presence and asks the
+# filer to state the gain type they relied on, rather than asserting a
+# rate ANCHOR cannot itself confirm is the right one for that disposal.
+
+domain_id: india-nri-securities
+title: "Capital Gains Tax — transfer of listed Indian securities by a Non-Resident Indian"
+sector: Finance & Insurance
+
+# ─────────────────────────── OPEN — same for every tenant ───────────────────────────
+open:
+
+  sources:
+    - source_id: cbdt-nri-securities
+      instrument: "Capital gains on transfer of listed securities by a non-resident (Income-tax Act, 1961 ss. 111A, 112A, 115, 139, 195; recodified under the Income-tax Act, 2025)"
+      issuing_authority: "Central Board of Direct Taxes"
+      url: "https://www.incometaxindia.gov.in/w/capital-gain"
+      v1_path: data/sources/india_nri_securities_v1.txt
+      v2_path: data/sources/india_nri_securities_v2.txt
+      last_verified: "2026-09-12"
+      max_verification_age_days: 120
+
+  obligations:
+    - obligation_id: OBL-NRI-001
+      provision: "Section 1.1-1.3"
+      source_id: cbdt-nri-securities
+      text: >
+        Gain on the transfer of a listed, securities-transaction-tax-paid
+        equity share is long-term if held more than twelve months, else
+        short-term. Short-term gain is chargeable at 20 per cent; long-term
+        gain at 12.5 per cent without indexation, with the first Rs. 1,25,000
+        of long-term gain in the financial year exempt. Both rates apply
+        from transfers made on or after 23 July 2024.
+      severity: high
+      artefact_type: nri_capital_gains_computation
+      depends_on: []
+
+    - obligation_id: OBL-NRI-002
+      provision: "Section 1.4"
+      source_id: cbdt-nri-securities
+      text: >
+        The payer must deduct tax at source on the sale proceeds credited to
+        the non-resident's account, at the rates in force at the time of
+        payment or credit; a non-resident does not get the exemption from
+        withholding that a resident selling the same security through a
+        recognised stock exchange gets. A certificate of the amount deducted
+        must be obtained and retained.
+      severity: medium
+      artefact_type: tds_certificate
+      depends_on: ["OBL-NRI-001"]
+
+    - obligation_id: OBL-NRI-003
+      provision: "Section 1.5"
+      source_id: cbdt-nri-securities
+      text: >
+        A return of income must be furnished on Form ITR-2 (or ITR-3 if the
+        individual also has business or professional income) for the
+        relevant assessment year, on or before the Section 139(1) due date,
+        reconciling the tax withheld under Section 1.4 against the actual
+        liability computed under Sections 1.2-1.3.
+      severity: high
+      artefact_type: filed_itr_return
+      depends_on: ["OBL-NRI-001", "OBL-NRI-002"]
+
+# ─────────────────────────── TENANT — differs per customer ──────────────────────────
+tenant:
+
+  register_schema:
+    entity: holding
+    fields:
+      - holding_id
+      - instrument_type          # direct_equity — listed, STT-paid shares
+      - jurisdiction             # must be India for the situs test
+      - acquisition_date
+      - disposal_date            # the chargeable event
+      - disposal_consideration
+      - india_itr_due_date       # the real Section 139(1) date for the assessment year, see note below
+      - status                   # held | disposed
+      - citizenships             # holder-level: gates Chapter XII-A NRI scope
+      - tax_residencies          # holder-level: the non-residence test
+
+  scoping_questions:
+    - question_id: SQ-NRI-01
+      text: "Is the holder an Indian citizen (the Chapter XII-A 'Non-Resident Indian' gate)?"
+      answerable_from_register: true
+      register_field: citizenships
+      provision: "Chapter XII-A"
+      expect:
+        contains: "India"
+      on_fail: EXEMPT
+      fail_reason_template: "Holder's citizenships ({value}) do not include India, so this pack's Non-Resident Indian scope under {provision} does not reach them (a non-citizen non-resident seller of the same security is taxed the same way on the gain itself, but that is a different, uncited regime this pack does not model)."
+
+    - question_id: SQ-NRI-02
+      text: "Is the holder NOT tax resident in India for the relevant year (i.e. an NRI, not ROR)?"
+      answerable_from_register: true
+      register_field: tax_residencies
+      provision: "Section 1.1"
+      expect:
+        not_contains: "India"
+      on_fail: EXEMPT
+      fail_reason_template: "Holder's tax residencies ({value}) include India, so the holder is not a non-resident for {provision} purposes — domains/india.yaml's Schedule FA/FSI regime is the one that reaches a Resident and Ordinarily Resident holder, not this pack."
+
+    - question_id: SQ-NRI-03
+      text: "Is the holding a listed, STT-paid Indian equity share?"
+      answerable_from_register: true
+      register_field: instrument_type
+      provision: "Section 1.1"
+      expect:
+        in: ["direct_equity"]
+      on_fail: EXEMPT
+      fail_reason_template: "Instrument type ({value}) is not a listed equity share within {provision}."
+
+    - question_id: SQ-NRI-04
+      text: "Is the security situated (listed) in India?"
+      answerable_from_register: true
+      register_field: jurisdiction
+      provision: "Section 1.1"
+      expect:
+        in: ["India"]
+      on_fail: EXEMPT
+      fail_reason_template: "Security jurisdiction is {value}, not India, so the Indian situs this pack covers does not apply."
+
+    - question_id: SQ-NRI-05
+      text: "Has a transfer (sale) of the security actually occurred?"
+      answerable_from_register: true
+      register_field: status
+      provision: "Section 1.1"
+      expect:
+        in: ["disposed"]
+      on_fail: EXEMPT
+      fail_reason_template: "Holding status is {value}: no transfer has occurred, so no chargeable gain has yet accrued under {provision}."
+
+  date_triggers:
+    - trigger_id: DT-NRI-01
+      obligation_id: OBL-NRI-001
+      description: "The gain arises, and its character is fixed, on the date of transfer — a one-time event."
+      base_field: disposal_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-NRI-02
+      obligation_id: OBL-NRI-002
+      description: "Withholding happens at the time of payment or credit of the sale proceeds — the disposal date, in practice."
+      base_field: disposal_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-NRI-03
+      obligation_id: OBL-NRI-003
+      # india_itr_due_date is carried as a real register fact rather than
+      # derived by interval arithmetic, for the same reason
+      # ireland-cgt-property.yaml carries its statutory payment/return dates:
+      # the Section 139(1) due date is a fixed calendar date tied to the
+      # financial year (ordinarily 31 July following it), not an anniversary
+      # of the disposal, and it is administratively extended often enough
+      # that TARA's date engine should not assume it.
+      description: "The return falls due on the Section 139(1) date for the assessment year following the transfer — a stated calendar date, not an anniversary."
+      base_field: india_itr_due_date
+      interval_years: 0
+      recurring: false
+
+  evidence_rules:
+    OBL-NRI-001:
+      artefact_type: nri_capital_gains_computation
+      required_fields: [disposal_date, gain_type, computed_tax]
+      lead_time_days: 30
+    OBL-NRI-002:
+      artefact_type: tds_certificate
+      required_fields: [tds_amount, deduction_date]
+      lead_time_days: 15
+    OBL-NRI-003:
+      artefact_type: filed_itr_return
+      required_fields: [assessment_year, itr_form, return_date]
+      lead_time_days: 45

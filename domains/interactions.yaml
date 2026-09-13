@@ -1,0 +1,245 @@
+# domains/interactions.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+#
+# The shared "database of interactions": obligations that exist only in the
+# intersection of two or more of a holder's own facts — a citizenship and a
+# tax residency, say — and belong to neither single-country pack alone.
+# This file is loaded by tara/core/interactions.py, which expands each
+# entry below into an ordinary DomainPack at load time (see to_domain_pack())
+# — COMPASS, PLOT, COURSE, ANCHOR and MERIDIAN all evaluate the result
+# exactly as they would any other domain pack, with no code path aware this
+# file exists.
+#
+# This replaces what used to be domains/india-ireland.yaml: a full,
+# hand-written DomainPack file (its own register_schema, its own
+# scoping_questions manually re-deriving the same two-fact check, its own
+# date_triggers/evidence_rules blocks) repeated in full for one country
+# pair. That approach does not scale — a second interaction meant copying
+# all of that boilerplate again. Here, each entry states only what actually
+# makes an interaction unique: which facts must both be true (`requires`),
+# which instrument backs the obligations (`source`), and what the
+# obligations are. Everything mechanical is synthesized in code.
+#
+# Adding a new interaction (a new country pair, or a new combination of
+# facts) is adding a new entry to this list — never a code change, and
+# never a new full domain pack file.
+
+interactions:
+  - domain_id: india-ireland-corridor
+    title: "Indian citizen, Irish tax resident: FEMA account status & India-Ireland DTAA relief"
+    sector: Finance & Insurance
+
+    # Both facts below must be true of the holder at once for this
+    # interaction to be a candidate at all — MERIDIAN's discovery filter
+    # (meridian._corridor_applies) reads exactly this pair off the
+    # synthesized pack's `corridor` block. This is a pre-filter, not the
+    # determination itself: COMPASS's own scoping_questions (generated from
+    # this same list, below) still run for any holder who passes it, so a
+    # holder who matches both facts but fails some other scoping condition
+    # still gets EXEMPT or INDETERMINATE, never a rubber-stamped CONFIRMED.
+    requires:
+      - requirement: citizenship_of
+        value: India
+      - requirement: tax_residency_of
+        value: Ireland
+
+    source:
+      source_id: fema-dtaa-india-ireland
+      instrument: "RBI Master Direction on Deposits & Accounts (NRI provisions) + India-Ireland DTAA"
+      issuing_authority: "Reserve Bank of India / Central Board of Direct Taxes"
+      url: "https://www.incometaxindia.gov.in/w/dtaa-ftc"
+      v1_path: data/sources/india_ireland_corridor_v1.txt
+      v2_path: data/sources/india_ireland_corridor_v2.txt
+      last_verified: "2026-08-25"
+      max_verification_age_days: 120
+
+    obligations:
+      - obligation_id: OBL-CORR-001
+        provision: "Section 6.2"
+        text: >
+          An Indian citizen who becomes tax resident outside India must not
+          continue to hold a resident (domestic) savings account in India; it
+          must be redesignated as a Non-Resident Ordinary (NRO) account, or
+          replaced with a Non-Resident External (NRE) account, within a
+          reasonable period of the change in residency status. This
+          obligation does not exist in either country's own single-country
+          guidance — it arises only from holding both facts at once.
+        severity: high
+        artefact_type: nro_redesignation_confirmation
+        applies_when:
+          - field: instrument_type
+            operator: equals
+            value: foreign_bank_account
+        evidence:
+          required_fields: [redesignation_date, account_type]
+
+      - obligation_id: OBL-CORR-002
+        provision: "Section 6.3"
+        text: >
+          Where India-source income arises to a holder who is Irish tax
+          resident, relief from double taxation under the India-Ireland DTAA
+          must be claimed by obtaining a Tax Residency Certificate (TRC) from
+          the Irish Revenue Commissioners and furnishing it with a completed
+          Form 10F to the Indian payer or tax authority for the relevant
+          assessment year.
+        severity: medium
+        artefact_type: form_10f_and_trc
+        applies_when:
+          - field: india_source_income
+            operator: equals
+            value: true
+        evidence:
+          required_fields: [assessment_year, trc_reference]
+
+  # Added 2026-09-12 in response to direct feedback that the demo only ever
+  # modeled the India-Ireland pair: an Indian citizen who becomes tax
+  # resident of the United States (rather than Ireland) triggers the exact
+  # same FEMA reclassification duty — it turns on becoming a non-resident
+  # Indian at all, not on which country — plus a DTAA relief mechanism whose
+  # US-side document differs (Form 6166/8802 instead of an Irish TRC). See
+  # data/sources/india_us_corridor_v1.txt for the citation basis.
+  - domain_id: india-us-corridor
+    title: "Indian citizen, US tax resident: FEMA account status & India-US DTAA relief"
+    sector: Finance & Insurance
+
+    requires:
+      - requirement: citizenship_of
+        value: India
+      - requirement: tax_residency_of
+        value: United States
+
+    source:
+      source_id: fema-dtaa-india-us
+      instrument: "RBI Master Direction on Deposits & Accounts (NRI provisions) + India-US DTAA + IRS Form 8802/6166"
+      issuing_authority: "Reserve Bank of India / Central Board of Direct Taxes / Internal Revenue Service"
+      url: "https://www.incometaxindia.gov.in/w/dtaa-ftc"
+      v1_path: data/sources/india_us_corridor_v1.txt
+      v2_path: data/sources/india_us_corridor_v2.txt
+      last_verified: "2026-09-12"
+      max_verification_age_days: 120
+
+    obligations:
+      - obligation_id: OBL-INUS-001
+        provision: "Section 3.1"
+        text: >
+          An Indian citizen who becomes tax resident outside India must not
+          continue to hold a resident (domestic) savings account in India; it
+          must be redesignated as a Non-Resident Ordinary (NRO) account, or
+          replaced with a Non-Resident External (NRE) account, within a
+          reasonable period of the change in residency status. Identical in
+          substance to OBL-CORR-001 in the India-Ireland corridor — the
+          trigger is becoming a non-resident Indian, not which country the
+          holder became resident of.
+        severity: high
+        artefact_type: nro_redesignation_confirmation
+        applies_when:
+          - field: instrument_type
+            operator: equals
+            value: foreign_bank_account
+        evidence:
+          required_fields: [redesignation_date, account_type]
+
+      - obligation_id: OBL-INUS-002
+        provision: "Section 3.2"
+        text: >
+          Where India-source income arises to a holder who is a US tax
+          resident, relief from double taxation under the India-US DTAA must
+          be claimed by obtaining a US Certificate of Residency (IRS Form
+          6166, via Form 8802) and furnishing it with a completed Form 10F to
+          the Indian payer or tax authority for the relevant assessment year.
+        severity: medium
+        artefact_type: form_10f_and_trc
+        applies_when:
+          - field: india_source_income
+            operator: equals
+            value: true
+        evidence:
+          required_fields: [assessment_year, trc_reference]
+
+  # Added 2026-09-12 alongside india-us-corridor, for the same reason: the
+  # third possible pair of the three countries this demo covers. This one
+  # runs in the opposite direction from the two above — the obligation
+  # belongs to the *residence* country (the US), crediting a tax the
+  # *source/situs* country (Ireland) charges regardless of residence — so it
+  # is deliberately NOT a reuse of the FEMA/NRO obligation shape, which is
+  # India-specific machinery that has no Irish or US analogue. See
+  # data/sources/ireland_us_corridor_v1.txt for the citation basis, and
+  # domains/ireland-cgt-property.yaml Section 1.1 for why Ireland does not
+  # exempt a non-resident from this charge in the first place.
+  - domain_id: ireland-us-corridor
+    title: "Irish citizen, US tax resident: Foreign Tax Credit relief for Irish capital gains tax paid"
+    sector: Finance & Insurance
+
+    requires:
+      - requirement: citizenship_of
+        value: Ireland
+      - requirement: tax_residency_of
+        value: United States
+
+    source:
+      source_id: irs-ftc-ireland-us
+      instrument: "IRS Form 1116 Instructions (Foreign Tax Credit) + Ireland-US DTAA, Article 24"
+      issuing_authority: "Internal Revenue Service"
+      url: "https://www.irs.gov/forms-pubs/about-form-1116"
+      v1_path: data/sources/ireland_us_corridor_v1.txt
+      v2_path: data/sources/ireland_us_corridor_v2.txt
+      last_verified: "2026-09-12"
+      max_verification_age_days: 120
+
+    obligations:
+      - obligation_id: OBL-IRUS-001
+        provision: "Section 2.1"
+        text: >
+          A United States person who has paid Irish capital gains tax on a
+          gain that is also subject to US federal income tax on the same
+          disposal may claim a foreign tax credit for the Irish tax paid,
+          computed and claimed on Form 1116, against their US tax liability
+          on that gain, up to the Form 1116 limitation. Ireland does not
+          exempt a US tax resident from its own charge on Irish-situated
+          property (Article 24 of the Ireland-US DTAA relieves double
+          taxation by the credit method, not the exemption method), so this
+          is the mechanism by which the double charge is actually relieved.
+        severity: high
+        artefact_type: form_1116_ftc_claim
+        applies_when:
+          - field: instrument_type
+            operator: in
+            value: [residential_property, commercial_property, land]
+          - field: status
+            operator: equals
+            value: disposed
+        date_trigger:
+          description: "The credit is claimed on the US federal income tax return for the year the gain is recognised — the disposal date, in practice."
+          base_field: disposal_date
+          interval_years: 0
+          recurring: false
+        evidence:
+          required_fields: [tax_year, irish_cgt_paid, credit_claimed]
+          lead_time_days: 45
+
+      - obligation_id: OBL-IRUS-002
+        provision: "Section 2.2"
+        text: >
+          The foreign tax credit claimed on Form 1116 must be substantiated
+          with evidence of the foreign tax actually paid — the Irish Form CG1
+          return and the receipt for the capital gains tax payment made to
+          the Office of the Revenue Commissioners — retained and produced if
+          the credit is examined.
+        severity: medium
+        artefact_type: ftc_substantiation_record
+        depends_on: ["OBL-IRUS-001"]
+        applies_when:
+          - field: instrument_type
+            operator: in
+            value: [residential_property, commercial_property, land]
+          - field: status
+            operator: equals
+            value: disposed
+        date_trigger:
+          description: "Substantiating records are gathered alongside the credit claim itself."
+          base_field: disposal_date
+          interval_years: 0
+          recurring: false
+        evidence:
+          required_fields: [irish_return_reference, payment_receipt_reference]
+          lead_time_days: 30

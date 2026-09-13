@@ -1,0 +1,288 @@
+# domains/ireland-cgt-property.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+#
+# Why this pack exists
+# --------------------
+# It was added to close a coverage gap found by running the system, not by
+# reading it: a real end-to-end MERIDIAN survey for an Irish citizen who had
+# become US tax resident and sold a house in Ireland returned EXEMPT from all
+# five packs then loaded — each for a correct and separately cited reason
+# (domains/tax.yaml ruled it out on instrument type under Section 4.1,
+# domains/us.yaml on citizenship, domains/india.yaml on tax residency,
+# domains/ireland-irp.yaml on EEA nationality, and the India-Ireland corridor
+# was pre-filtered out on citizenship). Every one of those answers was right.
+# Taken together they were still the wrong outcome, because nothing in the
+# loaded set modelled a disposal of Irish land — the single most common
+# cross-border event an Irish emigrant actually has.
+#
+# It is also the cleanest available proof that the architecture holds: this
+# pack is a YAML file and two source text files. No agent, no loader, no
+# pipeline function and no test was modified to add it. COMPASS walks its
+# scoping questions generically, PLOT reads its date triggers, COURSE
+# sequences its dependency graph, ANCHOR checks its evidence rules, and
+# MERIDIAN discovered it automatically by being pointed at the domains/
+# directory.
+#
+# Sources verified 2026-09-12 against revenue.ie and citizensinformation.ie:
+# the 33% rate, the EUR 1,270 annual personal exemption, the 15 December /
+# 31 January payment dates, the 31 October Form CG1 filing date, the
+# EUR 500,000 / EUR 1,000,000 Section 980 thresholds with 15% withholding,
+# and the Section 29 specified-asset charge on non-residents. Nothing below
+# states a figure or a date that was not confirmed against one of those.
+
+domain_id: ireland-cgt-property
+title: Capital Gains Tax — disposal of land and buildings situated in the State
+sector: Finance & Insurance
+
+# ─────────────────────────── OPEN — same for every tenant ───────────────────────────
+open:
+
+  sources:
+    - source_id: revenue-cgt-property
+      instrument: "Capital Gains Tax — disposal of land and buildings situated in the State (consolidated Revenue guidance; TCA 1997 ss. 29, 604, 980)"
+      issuing_authority: "Office of the Revenue Commissioners"
+      url: "https://www.revenue.ie/en/gains-gifts-and-inheritance/transfering-an-asset/cgt-clearance-certificate-cg50a.aspx"
+      v1_path: data/sources/ireland_cgt_property_v1.txt
+      v2_path: data/sources/ireland_cgt_property_v2.txt
+      last_verified: "2026-09-12"
+      max_verification_age_days: 120
+
+  obligations:
+    - obligation_id: OBL-CGT-001
+      provision: "Section 1.1"
+      source_id: revenue-cgt-property
+      text: >
+        A chargeable gain accruing on the disposal of land or buildings
+        situated in the State is within the charge to Irish capital gains
+        tax irrespective of the residence of the person disposing of it. A
+        person neither resident nor ordinarily resident in the State remains
+        chargeable on such specified assets, and the gain must be computed
+        for the year of assessment in which the disposal was made.
+      severity: high
+      artefact_type: cgt_computation
+      depends_on: []
+
+    - obligation_id: OBL-CGT-002
+      provision: "Section 1.2"
+      source_id: revenue-cgt-property
+      text: >
+        Tax on the chargeable gain is charged at the rate of 33 per cent,
+        after deduction of the annual personal exemption of EUR 1,270
+        available to the individual for that year of assessment.
+      severity: high
+      artefact_type: cgt_computation
+      depends_on: ["OBL-CGT-001"]
+
+    - obligation_id: OBL-CGT-003
+      provision: "Section 1.3"
+      source_id: revenue-cgt-property
+      text: >
+        Capital gains tax on a disposal made in the initial period (1 January
+        to 30 November) is due and payable on or before 15 December in the
+        same year of assessment. Tax on a disposal made in the later period
+        (1 to 31 December) is due and payable on or before 31 January in the
+        following year of assessment.
+      severity: high
+      artefact_type: cgt_payment_receipt
+      depends_on: ["OBL-CGT-002"]
+
+    - obligation_id: OBL-CGT-004
+      provision: "Section 1.4"
+      source_id: revenue-cgt-property
+      text: >
+        A return of the disposal must be made whether or not any tax is
+        payable and whether or not relief is claimed, on Form CG1 (or within
+        the Form 11 income tax return where the person is a chargeable
+        person), on or before 31 October of the year of assessment following
+        the year in which the disposal was made.
+      severity: high
+      artefact_type: filed_cgt_return
+      depends_on: ["OBL-CGT-001"]
+
+    - obligation_id: OBL-CGT-005
+      provision: "Section 1.5"
+      source_id: revenue-cgt-property
+      text: >
+        Where the consideration exceeds EUR 500,000, or EUR 1,000,000 in the
+        case of a house or apartment, the person disposing of the asset must
+        obtain a capital gains tax clearance certificate (Form CG50A) in
+        advance of completion; failing which the purchaser is obliged to
+        deduct 15 per cent of the consideration and remit it to the Revenue
+        Commissioners, creditable against the vendor's liability.
+      severity: high
+      artefact_type: cg50a_clearance_certificate
+      depends_on: []
+
+    - obligation_id: OBL-CGT-006
+      provision: "Section 1.6"
+      source_id: revenue-cgt-property
+      text: >
+        Where a dwelling house was occupied as the individual's only or main
+        residence for part only of the period of ownership, principal private
+        residence relief is restricted by reference to the proportion of that
+        period for which it was so occupied, the last 12 months of ownership
+        being treated as a period of occupation in every case. A computation
+        showing the apportionment relied on must be retained to substantiate
+        the partial claim.
+      severity: medium
+      artefact_type: ppr_relief_computation
+      depends_on: ["OBL-CGT-001"]
+
+# ─────────────────────────── TENANT — differs per customer ──────────────────────────
+tenant:
+
+  register_schema:
+    entity: holding
+    fields:
+      - holding_id
+      - instrument_type          # residential_property | commercial_property | land
+      - jurisdiction             # must be Ireland for the Section 1.1 situs test
+      - acquisition_date
+      - disposal_date            # the chargeable event
+      - disposal_consideration   # used to read Section 1.5's threshold
+      - cgt_payment_due_date     # the real statutory date, see the note on date_triggers
+      - cgt_return_due_date
+      - status                   # held | disposed
+
+  scoping_questions:
+    # Deliberately ordered cheapest-and-most-decisive first, so a holding that
+    # could never be in scope is ruled out on its own citation rather than
+    # falling through four questions to get there.
+    - question_id: SQ-CGT-01
+      text: "Is the holding land or a building (residential property, commercial property, or land)?"
+      answerable_from_register: true
+      register_field: instrument_type
+      provision: "Section 1.1"
+      expect:
+        in: ["residential_property", "commercial_property", "land"]
+      on_fail: EXEMPT
+      fail_reason_template: "Instrument type ({value}) is not land or buildings within {provision}."
+
+    - question_id: SQ-CGT-02
+      text: "Is the asset situated in the State (Ireland)?"
+      answerable_from_register: true
+      register_field: jurisdiction
+      provision: "Section 1.1"
+      expect:
+        in: ["Ireland"]
+      on_fail: EXEMPT
+      fail_reason_template: >-
+        Asset is situated in {value}, not in the State, so the {provision}
+        specified-asset charge on a non-resident does not reach it.
+
+    - question_id: SQ-CGT-03
+      text: "Has a disposal of the asset actually occurred?"
+      answerable_from_register: true
+      register_field: status
+      provision: "Section 1.1"
+      expect:
+        in: ["disposed"]
+      on_fail: EXEMPT
+      fail_reason_template: >-
+        Holding status is {value}: no disposal has occurred, so no chargeable
+        gain has yet accrued under {provision}. Nothing is due until it does.
+
+    # Deliberately NOT answerable from the register. Whether a dwelling house
+    # was occupied as the holder's only or main residence throughout the whole
+    # period of ownership is a fact about how someone lived, not a field an
+    # asset register can be trusted to carry — and it is entirely decisive: if
+    # the answer is yes, full principal private residence relief applies and
+    # nothing in this pack is owed. COMPASS therefore asks rather than
+    # assuming, returning INDETERMINATE with this question_id until it is
+    # answered. This is the same design choice domains/tax.yaml makes for
+    # SQ-03 (the remittance basis).
+    - question_id: SQ-CGT-04
+      text: "Was the property occupied as the holder's only or main residence throughout the entire period of ownership?"
+      answerable_from_register: false
+      register_field: null
+      provision: "Section 1.6"
+      expect:
+        equals: false
+      on_fail: EXEMPT
+      fail_reason_template: >-
+        Property was occupied as the only or main residence throughout the
+        period of ownership, so full principal private residence relief under
+        {provision} extinguishes the chargeable gain.
+
+  # A note on base_field, because it is the one place this pack looks
+  # different from domains/tax.yaml. TARA's date engine (tara/core/dates.py)
+  # resolves a trigger as `base_field (+ N years)` and derives an action
+  # deadline *backward* from it. That models an anniversary-driven obligation
+  # exactly, which is what the 8-year deemed disposal is. Irish CGT payment
+  # and filing dates are not anniversaries: they are fixed calendar dates
+  # (15 December, 31 January, 31 October) whose relationship to the disposal
+  # depends on which side of 30 November the disposal fell. Rather than
+  # approximate that with an interval, the statutory dates are carried on the
+  # register as real, stated facts — the same decision Round 5 made for
+  # `irp_expiry_date` in domains/ireland-irp.yaml, and for the same reason:
+  # a real date on the register beats an assumed term folded into arithmetic
+  # that would misrepresent it.
+  date_triggers:
+    - trigger_id: DT-CGT-01
+      obligation_id: OBL-CGT-001
+      description: "The chargeable gain arises on the date of disposal — a one-time event, not a recurring cycle."
+      base_field: disposal_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-CGT-02
+      obligation_id: OBL-CGT-002
+      description: "The rate of charge applies to the same disposal event."
+      base_field: disposal_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-CGT-03
+      obligation_id: OBL-CGT-003
+      description: "Payment falls due on the statutory date for the period the disposal fell in (15 December, or 31 January following)."
+      base_field: cgt_payment_due_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-CGT-04
+      obligation_id: OBL-CGT-004
+      description: "The return falls due on 31 October of the year of assessment following the disposal."
+      base_field: cgt_return_due_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-CGT-05
+      obligation_id: OBL-CGT-005
+      description: "Clearance must be in hand in advance of completion, so the disposal date is the operative deadline."
+      base_field: disposal_date
+      interval_years: 0
+      recurring: false
+    - trigger_id: DT-CGT-06
+      obligation_id: OBL-CGT-006
+      description: "The apportionment computation is required for the disposal it relates to."
+      base_field: disposal_date
+      interval_years: 0
+      recurring: false
+
+  # lead_time_days are operational planning lead times — how far ahead of the
+  # statutory date the work should be done — not statutory periods. They are
+  # what COURSE derives an action deadline backward from, and they are stated
+  # here so that derivation is inspectable rather than arbitrary. Only
+  # expected_rate below is a statutory figure.
+  evidence_rules:
+    OBL-CGT-001:
+      artefact_type: cgt_computation
+      required_fields: [disposal_date, disposal_proceeds, chargeable_gain]
+      lead_time_days: 30
+    OBL-CGT-002:
+      artefact_type: cgt_computation
+      required_fields: [rate_applied, annual_exemption_applied, computed_tax]
+      expected_rate: 0.33
+      lead_time_days: 30
+    OBL-CGT-003:
+      artefact_type: cgt_payment_receipt
+      required_fields: [payment_date, tax_paid_amount]
+      lead_time_days: 14
+    OBL-CGT-004:
+      artefact_type: filed_cgt_return
+      required_fields: [return_date, form_type, chargeable_gain]
+      lead_time_days: 30
+    OBL-CGT-005:
+      artefact_type: cg50a_clearance_certificate
+      required_fields: [certificate_number, issue_date, consideration]
+      lead_time_days: 21
+    OBL-CGT-006:
+      artefact_type: ppr_relief_computation
+      required_fields: [months_occupied, months_owned, relieved_proportion]
+      lead_time_days: 30

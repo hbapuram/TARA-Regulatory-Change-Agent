@@ -1,0 +1,16 @@
+IRS Form 3520 Instructions — Annual Return to Report Transactions With
+Foreign Trusts and Receipt of Certain Foreign Gifts
+
+Instrument: IRS Form 3520 Instructions
+Issuing authority: Internal Revenue Service
+Provision: Section 4.1 — Form 3520 reporting
+
+Section 4.1 — Form 3520 reporting
+A United States person who, during the taxable year, receives a distribution
+from a foreign trust, is treated as the owner of any part of a foreign trust
+under the grantor trust rules, or receives foreign gifts or bequests from a
+nonresident alien individual or foreign estate exceeding the applicable
+reporting threshold, must file Form 3520 for that taxable year, separately
+from and in addition to any FBAR or Form 8938 filing otherwise required.
+
+Last verified: 2026-09-10

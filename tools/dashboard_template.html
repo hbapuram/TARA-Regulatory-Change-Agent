@@ -1,0 +1,502 @@
+<title>TARA Chart Room</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --masthead-bg:#12181a; --masthead-fg:#f4efe2; --masthead-mid:#9ba39c; --masthead-rule:#2a3134;
+
+    --paper:#efede3; --card:#faf9f3; --ink:#14181a; --body:#3c4247; --mid:#6e7871;
+    --rule:#ddd9c6; --rule-strong:#cac5ac;
+    --open:#1f7a5c; --open-tint:#e2ede6;
+    --tenant:#5b3fa6; --tenant-tint:#eae5f7;
+    --atlas:#a85a1f; --atlas-tint:#f3e6d7;
+    --accent:#1a4a6b; --accent-tint:#e2ecf1;
+    --danger:#b23a3a; --danger-tint:#f6e4e2;
+    --warning:#96721a; --warning-tint:#f3ecd8;
+    --shadow: 0 1px 2px rgba(20,24,26,.06), 0 4px 14px rgba(20,24,26,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --masthead-bg:#0c0f10; --masthead-fg:#f2ede0; --masthead-mid:#8b958e; --masthead-rule:#22282a;
+      --paper:#15191b; --card:#1c2124; --ink:#eeeae0; --body:#c7cdc7; --mid:#8b958e;
+      --rule:#2a302c; --rule-strong:#394038;
+      --open:#4db38a; --open-tint:#182620;
+      --tenant:#a68ee8; --tenant-tint:#241f36;
+      --atlas:#e0954f; --atlas-tint:#2c2119;
+      --accent:#6fa8cf; --accent-tint:#182530;
+      --danger:#e28787; --danger-tint:#2c1c1c;
+      --warning:#d8b25b; --warning-tint:#2b2416;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 18px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --masthead-bg:#0c0f10; --masthead-fg:#f2ede0; --masthead-mid:#8b958e; --masthead-rule:#22282a;
+    --paper:#15191b; --card:#1c2124; --ink:#eeeae0; --body:#c7cdc7; --mid:#8b958e;
+    --rule:#2a302c; --rule-strong:#394038;
+    --open:#4db38a; --open-tint:#182620;
+    --tenant:#a68ee8; --tenant-tint:#241f36;
+    --atlas:#e0954f; --atlas-tint:#2c2119;
+    --accent:#6fa8cf; --accent-tint:#182530;
+    --danger:#e28787; --danger-tint:#2c1c1c;
+    --warning:#d8b25b; --warning-tint:#2b2416;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 18px rgba(0,0,0,.35);
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--paper); color:var(--body);
+    font-family:"Public Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:15px; line-height:1.6;
+  }
+  h1,h2,h3{ font-family:"Spectral", Georgia, serif; color:var(--ink); text-wrap:balance; margin:0; }
+  code, .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; }
+  .tabular{ font-variant-numeric: tabular-nums; }
+  a{ color:var(--accent); }
+
+  .masthead{ background:var(--masthead-bg); color:var(--masthead-fg); padding:30px 28px 22px; }
+  .masthead-inner{ max-width:1040px; margin:0 auto; }
+  .wordmark{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .wordmark h1{ color:var(--masthead-fg); font-size:30px; font-weight:700; letter-spacing:-.02em; }
+  .wordmark .full-name{ font-size:13.5px; color:var(--masthead-mid); font-weight:500; }
+  .masthead-sub{ margin-top:6px; font-size:14.5px; color:#cfd6cd; max-width:640px; }
+  .masthead-facts{ display:flex; flex-wrap:wrap; gap:22px; margin-top:18px; padding-top:14px; border-top:1px solid var(--masthead-rule); }
+  .fact-k{ font-family:"JetBrains Mono"; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--masthead-mid); }
+  .fact-v{ font-size:14px; font-weight:600; color:var(--masthead-fg); margin-top:3px; }
+  .fact-v.good::before{ content:"● "; color:#5fd39a; font-size:11px; }
+
+  .nav{ position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--rule); padding:10px 28px; }
+  .nav-inner{ max-width:1040px; margin:0 auto; display:flex; gap:7px; flex-wrap:wrap; }
+  .nav a{ font-family:"JetBrains Mono"; font-size:11px; text-decoration:none; color:var(--body); padding:6px 12px; border:1px solid var(--rule-strong); border-radius:20px; background:var(--card); white-space:nowrap; }
+  .nav a:hover{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:8px 28px 64px; }
+  section{ padding-top:46px; scroll-margin-top:56px; }
+  .band-tag{ display:inline-flex; align-items:center; gap:6px; font-family:"JetBrains Mono"; font-size:10px; letter-spacing:.14em; text-transform:uppercase; padding:3px 9px 4px; border-radius:20px; }
+  .band-tag.open{ background:var(--open-tint); color:var(--open); }
+  .band-tag.tenant{ background:var(--tenant-tint); color:var(--tenant); }
+  .band-tag.atlas{ background:var(--atlas-tint); color:var(--atlas); }
+  .band-tag::before{ content:"●"; font-size:8px; }
+
+  h2{ font-size:23px; font-weight:600; letter-spacing:-.01em; margin-top:9px; }
+  .lede{ font-size:14.5px; color:var(--mid); max-width:640px; margin-top:6px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; font-family:"JetBrains Mono"; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--mid); font-weight:500; padding:0 12px 8px 0; border-bottom:1px solid var(--rule-strong); }
+  td{ padding:10px 12px 10px 0; border-bottom:1px solid var(--rule); vertical-align:top; color:var(--body); }
+  tr:last-child td{ border-bottom:none; }
+  .table-scroll{ overflow-x:auto; background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:6px 16px; box-shadow:var(--shadow); margin-top:18px; }
+  td.oblid, th.oblid{ white-space:nowrap; }
+  td .citation{ color:var(--mid); font-size:12.5px; }
+
+  .pill{ display:inline-flex; align-items:center; gap:5px; font-family:"JetBrains Mono"; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .pill.confirmed, .pill.satisfied, .pill.unchanged-ok, .pill.closed, .pill.added{ background:var(--open-tint); color:var(--open); }
+  .pill.exempt{ background:var(--rule); color:var(--mid); }
+  .pill.indeterminate, .pill.partial, .pill.amended{ background:var(--warning-tint); color:var(--warning); }
+  .pill.absent, .pill.returned, .pill.superseded, .pill.escalated{ background:var(--danger-tint); color:var(--danger); }
+  .pill.reopened, .pill.withdrawn{ background:var(--atlas-tint); color:var(--atlas); }
+
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+  @media (max-width:860px){ .grid3{ grid-template-columns:1fr; } }
+  .card{ background:var(--card); border:1px solid var(--rule); border-left:3px solid var(--tenant); border-radius:10px; padding:16px 17px; box-shadow:var(--shadow); }
+  .card.exempt-card{ border-left-color:var(--mid); }
+  .card.skipped-card{ border-left-color:var(--rule-strong); opacity:.72; }
+  .card.corridor-card{ border-left-color:var(--atlas); }
+  .corridor-badge{ display:inline-flex; align-items:center; gap:4px; font-family:"JetBrains Mono"; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--atlas); background:var(--atlas-tint); border-radius:20px; padding:2px 8px; margin-left:8px; vertical-align:middle; }
+  .card h3{ font-size:16px; }
+  .card .sub{ font-family:"JetBrains Mono"; font-size:11.5px; color:var(--mid); margin-top:3px; }
+  .card .note{ font-size:12px; color:var(--mid); font-style:italic; margin-top:8px; line-height:1.5; }
+  .card .determination{ margin-top:12px; padding-top:12px; border-top:1px solid var(--rule); }
+  .det-reason{ font-size:12.5px; color:var(--mid); margin-top:5px; }
+  .gap-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--rule); font-size:12.5px; }
+  .gap-row:last-child{ border-bottom:none; }
+  .gap-left .oid{ font-family:"JetBrains Mono"; font-weight:600; color:var(--ink); font-size:12.5px; }
+  .gap-left .prov{ color:var(--mid); font-size:11.5px; margin-top:1px; }
+  .gap-reason{ color:var(--mid); font-size:11.5px; margin-top:2px; max-width:260px; }
+  .actions-title{ font-family:"JetBrains Mono"; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--mid); margin:14px 0 6px; }
+  .action-row{ display:flex; justify-content:space-between; gap:8px; font-size:12px; padding:5px 0; }
+  .action-row .deadline{ font-family:"JetBrains Mono"; color:var(--ink); white-space:nowrap; }
+  .action-row .owner{ color:var(--mid); }
+
+  .g2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px; }
+  @media (max-width:720px){ .g2{ grid-template-columns:1fr; } }
+  .verdict-card{ background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:17px 18px; box-shadow:var(--shadow); }
+  .verdict-card.accept{ border-left:3px solid var(--open); }
+  .verdict-card.reject{ border-left:3px solid var(--danger); }
+  .verdict-head{ display:flex; align-items:center; justify-content:space-between; }
+  .verdict-head .pill{ font-size:12px; padding:4px 11px; }
+  .kv{ display:grid; grid-template-columns:auto 1fr; gap:5px 14px; margin-top:12px; font-family:"JetBrains Mono"; font-size:13px; }
+  .kv dt{ color:var(--mid); }
+  .kv dd{ margin:0; color:var(--ink); font-weight:500; }
+  .verdict-reason{ margin-top:13px; padding-top:12px; border-top:1px solid var(--rule); font-size:13px; color:var(--body); line-height:1.55; }
+
+  .coverage-strip{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  .coverage-chip{ background:var(--card); border:1px solid var(--rule); border-radius:9px; padding:9px 13px; font-size:12.5px; box-shadow:var(--shadow); }
+  .coverage-chip .src{ font-family:"JetBrains Mono"; font-weight:600; color:var(--ink); }
+  .coverage-chip .flags{ margin-top:4px; display:flex; gap:8px; color:var(--mid); font-size:11.5px; }
+  .coverage-chip .fingerprint{ margin-top:6px; padding-top:6px; border-top:1px solid var(--rule); font-family:"JetBrains Mono"; font-size:10.5px; color:var(--mid); }
+  .coverage-chip .fingerprint b{ color:var(--body); font-weight:500; }
+
+  .source-log-note{ font-size:12.5px; color:var(--mid); margin-top:18px; }
+  .source-log-note code{ background:var(--card); border:1px solid var(--rule); border-radius:5px; padding:1px 6px; }
+
+  .reopen-banner{ margin-top:16px; background:var(--atlas-tint); border:1px solid var(--atlas); border-radius:10px; padding:13px 16px; font-size:13px; color:var(--ink); display:flex; gap:10px; align-items:flex-start; }
+  .reopen-banner .glyph{ color:var(--atlas); font-size:17px; line-height:1; }
+
+  .chain-cols{ display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:18px; }
+  @media (max-width:800px){ .chain-cols{ grid-template-columns:1fr; } }
+  .chain-title{ font-family:"JetBrains Mono"; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+  .chain{ position:relative; padding-left:22px; }
+  .chain::before{ content:""; position:absolute; left:6px; top:4px; bottom:4px; width:1px; background:var(--rule-strong); }
+  .chain-entry{ position:relative; padding-bottom:16px; }
+  .chain-entry:last-child{ padding-bottom:0; }
+  .chain-entry::before{ content:""; position:absolute; left:-22px; top:4px; width:9px; height:9px; border-radius:50%; background:var(--card); border:2px solid var(--mid); }
+  .chain-entry.agent-SURVEY::before, .chain-entry.agent-LEGEND::before{ border-color:var(--open); }
+  .chain-entry.agent-COMPASS::before, .chain-entry.agent-PLOT::before, .chain-entry.agent-COURSE::before{ border-color:var(--tenant); }
+  .chain-entry.agent-ANCHOR::before{ border-color:var(--atlas); }
+  .chain-row1{ display:flex; gap:8px; align-items:baseline; font-family:"JetBrains Mono"; font-size:11.5px; }
+  .chain-seq{ color:var(--mid); }
+  .chain-agent{ font-weight:700; color:var(--ink); }
+  .chain-step{ color:var(--mid); }
+  .chain-detail{ font-size:12px; color:var(--body); margin-top:3px; max-width:420px; }
+  .chain-hash{ font-family:"JetBrains Mono"; font-size:10.5px; color:var(--mid); margin-top:3px; }
+
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); font-size:12px; color:var(--mid); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  footer code{ background:var(--card); border:1px solid var(--rule); border-radius:5px; padding:1px 6px; }
+</style>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="wordmark">
+      <h1>TARA</h1>
+      <span class="full-name">Tax, Assets &amp; Residency Advisor</span>
+    </div>
+    <div class="masthead-sub" id="domain-sub"></div>
+    <div class="masthead-facts">
+      <div><div class="fact-k">Chart version</div><div class="fact-v tabular" id="fact-version">—</div></div>
+      <div><div class="fact-k">As of</div><div class="fact-v tabular" id="fact-asof">—</div></div>
+      <div><div class="fact-k">Ledger</div><div class="fact-v good tabular" id="fact-ledger">—</div></div>
+      <div><div class="fact-k">Orchestrator</div><div class="fact-v">deterministic · no model</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a href="#chart">The Chart</a>
+    <a href="#positions">Tenant Positions</a>
+    <a href="#anchor">Anchor</a>
+    <a href="#meridian">Cross-Jurisdiction</a>
+    <a href="#almanac">Almanac Refresh</a>
+    <a href="#sources">Source Monitoring</a>
+    <a href="#atlas">Atlas Ledger</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section id="chart">
+    <span class="band-tag open">Open · computed once</span>
+    <h2>The Chart</h2>
+    <p class="lede">SURVEY diffed the source; LEGEND decomposed the changed provisions into these obligations. Identical for every tenant subscribed to this domain.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th class="oblid">Obligation</th><th>Provision</th><th>vs. this diff</th><th>Severity</th><th>Evidence required</th><th>What it requires</th>
+        </tr></thead>
+        <tbody id="chart-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="positions">
+    <span class="band-tag tenant">Tenant · computed per customer</span>
+    <h2>Tenant Positions</h2>
+    <p class="lede">COMPASS confirms applicability, PLOT aligns the Chart against the register, COURSE opens dated actions — in that order, for each holding.</p>
+    <div class="grid3" id="holdings-grid"></div>
+  </section>
+
+  <section id="anchor">
+    <span class="band-tag tenant">Tenant · exact, never approximate</span>
+    <h2>Anchor — Evidence Verification</h2>
+    <p class="lede">Same obligation, same action, two submitted computations of the 38% post-2026 rate on a €10,000 deemed gain. Only an exact match closes.</p>
+    <div class="g2" id="anchor-grid"></div>
+  </section>
+
+  <section id="meridian">
+    <span class="band-tag tenant">Tenant · MERIDIAN, the 9th agent</span>
+    <h2>Cross-Jurisdiction Survey</h2>
+    <p class="lede">Same holding, every linked domain pack. Each standalone pack is always tried and stands on its own — no reference to the others. A corridor pack is tried only when the holder's own citizenship/tax-residency facts match what it names; when they don't, it's still listed here, skipped, with the reason why — never silently dropped.</p>
+    <div class="grid3" id="meridian-grid"></div>
+  </section>
+
+  <section id="almanac">
+    <span class="band-tag open">Open · the refresh cycle</span>
+    <h2>Almanac — Refresh Cycle</h2>
+    <p class="lede">Coverage asserted per source, then the obligation graph versioned against the last recorded Chart. Each chip's fingerprint is the sha256 of exactly what SURVEY read this cycle — cross-checked below against the source's full access history.</p>
+    <div class="coverage-strip" id="coverage-strip"></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th class="oblid">Obligation</th><th id="graphdiff-th">Marking</th></tr></thead>
+        <tbody id="graphdiff-body"></tbody>
+      </table>
+    </div>
+    <div id="reopen-container"></div>
+  </section>
+
+  <section id="sources">
+    <span class="band-tag open">Open · SURVEY's own record</span>
+    <h2>Source Monitoring</h2>
+    <p class="lede">Every time a configured source was checked, independent of what LEGEND or any tenant agent later did with it: reached or not, changed or not, stale or not, and the sha256 of the exact bytes read — so "was this source actually monitored, and what did we read" is answerable on its own, not inferred from an obligation's chain.</p>
+    <div id="source-log-groups"></div>
+    <p class="source-log-note">Configured sources only — TARA never scrapes the open web, so this table is the complete list of what could possibly have changed the Chart. Queried via <code>AtlasStore.entries_for_source()</code>.</p>
+  </section>
+
+  <section id="atlas">
+    <span class="band-tag atlas">Lineage · append-only</span>
+    <h2>Atlas Ledger</h2>
+    <p class="lede">Two reconstructed chains: OBL-001, undisturbed since the last Chart; OBL-002, closed once and then reopened when its own provision was superseded.</p>
+    <div class="chain-cols">
+      <div>
+        <div class="chain-title"><span>OBL-001 · Section 4.2</span><span>stable</span></div>
+        <div class="chain" id="chain-obl-001"></div>
+      </div>
+      <div>
+        <div class="chain-title"><span>OBL-002 · Section 4.3</span><span>closed → superseded → reopened</span></div>
+        <div class="chain" id="chain-obl-002"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Static snapshot from <code>tools/export_demo_data.py</code> — regenerate anytime, no server, no model.</span>
+    <span id="fact-entries"></span>
+  </footer>
+</div>
+
+<script id="demo-data" type="application/json">__DEMO_DATA_JSON__</script>
+<script>
+(function(){
+  const data = JSON.parse(document.getElementById('demo-data').textContent);
+
+  function esc(s){
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function fmtDate(d){ return d ? d : '—'; }
+  function shortHash(h){ return h ? h.slice(0,10) + '…' : ''; }
+  function pillClass(v){ return String(v).toLowerCase().replace(/_/g,'-'); }
+
+  // ---- masthead ----
+  document.getElementById('domain-sub').textContent =
+    data.domain.title + ' — ' + data.domain.sector + ' (' + data.domain.domain_id + ')';
+  document.getElementById('fact-version').textContent = 'v' + data.almanac.version;
+  document.getElementById('fact-asof').textContent = data.as_of;
+  document.getElementById('fact-ledger').textContent =
+    (data.atlas_verified ? 'verified' : 'TAMPERED') + ' · ' + data.atlas_total_entries + ' entries';
+  document.getElementById('fact-entries').textContent =
+    data.atlas_total_entries + ' ledger entries · chain ' + (data.atlas_verified ? 'verified ✓' : 'FAILED ✗');
+  document.getElementById('graphdiff-th').textContent =
+    data.almanac.version <= 1 ? 'Marking (first Chart)' : 'Marking since Chart v' + (data.almanac.version - 1);
+
+  // ---- the Chart ----
+  const chartBody = document.getElementById('chart-body');
+  data.obligations.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="oblid mono">' + esc(o.obligation_id) + '</td>' +
+      '<td class="mono">' + esc(o.provision) + '</td>' +
+      '<td><span class="pill ' + pillClass(o.change_type) + '">' + esc(o.change_type) + '</span></td>' +
+      '<td>' + esc(o.severity) + '</td>' +
+      '<td class="mono">' + esc(o.artefact_type) + '</td>' +
+      '<td class="citation">' + esc(o.text) + '</td>';
+    chartBody.appendChild(tr);
+  });
+
+  // ---- tenant positions ----
+  const grid = document.getElementById('holdings-grid');
+  data.holdings.forEach(h => {
+    const det = h.determination;
+    const isExempt = det.status !== 'CONFIRMED';
+    const card = document.createElement('div');
+    card.className = 'card' + (isExempt ? ' exempt-card' : '');
+
+    let gapsHtml = '';
+    h.gaps.forEach(g => {
+      gapsHtml +=
+        '<div class="gap-row"><div class="gap-left">' +
+        '<div class="oid">' + esc(g.obligation_id) + '</div>' +
+        '<div class="prov">' + esc(g.provision) + '</div></div>' +
+        '<div style="text-align:right"><span class="pill ' + pillClass(g.coverage) + '">' + esc(g.coverage) + '</span>' +
+        '<div class="gap-reason">' + esc(g.reason) + '</div></div></div>';
+    });
+
+    let actionsHtml = '';
+    if (h.actions.length) {
+      actionsHtml = '<div class="actions-title">Course — dated actions</div>';
+      h.actions.forEach(a => {
+        actionsHtml +=
+          '<div class="action-row"><span>' + esc(a.obligation_id) +
+          (a.escalated ? ' <span class="pill escalated" style="padding:1px 6px;font-size:9.5px;">escalated</span>' : '') +
+          '</span><span><span class="deadline">' + fmtDate(a.deadline) + '</span> <span class="owner">' + esc(a.owner) + '</span></span></div>';
+      });
+    }
+
+    card.innerHTML =
+      '<h3 class="mono">' + esc(h.holding.holding_id) + '</h3>' +
+      '<div class="sub">' + esc(h.holding.instrument_type) + ' · ' + esc(h.holding.jurisdiction) +
+      ' · acquired ' + esc(h.holding.acquisition_date) + '</div>' +
+      '<div class="note">' + esc(h.holding._note) + '</div>' +
+      '<div class="determination">' +
+      '<span class="pill ' + pillClass(det.status) + '">' + esc(det.status) + '</span>' +
+      '<div class="det-reason">' + esc(det.reason) + '</div></div>' +
+      gapsHtml + actionsHtml;
+    grid.appendChild(card);
+  });
+
+  // ---- anchor demo ----
+  const anchorGrid = document.getElementById('anchor-grid');
+  function renderVerdict(label, v, cls){
+    const wrap = document.createElement('div');
+    wrap.className = 'verdict-card ' + cls;
+    wrap.innerHTML =
+      '<div class="verdict-head"><strong>' + label + '</strong>' +
+      '<span class="pill ' + pillClass(v.outcome) + '">' + esc(v.outcome) + '</span></div>' +
+      '<dl class="kv">' +
+      '<dt>deemed_gain</dt><dd>' + v.artefact.deemed_gain.toFixed(2) + '</dd>' +
+      '<dt>rate_applied</dt><dd>' + v.artefact.rate_applied + '</dd>' +
+      '<dt>computed_tax</dt><dd>' + v.artefact.computed_tax.toFixed(2) + '</dd>' +
+      '</dl>' +
+      '<div class="verdict-reason">' + esc(v.reason) + '</div>';
+    return wrap;
+  }
+  anchorGrid.appendChild(renderVerdict('Submission A', data.anchor_demo.accepted, 'accept'));
+  anchorGrid.appendChild(renderVerdict('Submission B', data.anchor_demo.rejected, 'reject'));
+
+  // ---- meridian: cross-jurisdiction survey ----
+  const meridianGrid = document.getElementById('meridian-grid');
+  data.cross_jurisdiction.results.forEach(r => {
+    const card = document.createElement('div');
+    const badge = r.is_corridor ? '<span class="corridor-badge">corridor</span>' : '';
+
+    if (!r.considered) {
+      card.className = 'card skipped-card';
+      card.innerHTML =
+        '<h3 class="mono">' + esc(r.domain_id) + badge + '</h3>' +
+        '<div class="sub">' + esc(r.title) + '</div>' +
+        '<div class="determination">' +
+        '<span class="pill exempt">not tried</span>' +
+        '<div class="det-reason">' + esc(r.skipped_reason) + '</div></div>';
+      meridianGrid.appendChild(card);
+      return;
+    }
+
+    const det = r.determination;
+    const isExempt = det.status !== 'CONFIRMED';
+    card.className = 'card' + (r.is_corridor ? ' corridor-card' : (isExempt ? ' exempt-card' : ''));
+
+    let actionsHtml = '';
+    if (r.actions.length) {
+      actionsHtml = '<div class="actions-title">Course — dated actions</div>';
+      r.actions.forEach(actionId => {
+        actionsHtml += '<div class="action-row"><span class="mono">' + esc(actionId) + '</span></div>';
+      });
+    }
+
+    card.innerHTML =
+      '<h3 class="mono">' + esc(r.domain_id) + badge + '</h3>' +
+      '<div class="sub">' + esc(r.title) + '</div>' +
+      '<div class="determination">' +
+      '<span class="pill ' + pillClass(det.status) + '">' + esc(det.status) + '</span>' +
+      '<div class="det-reason">' + esc(det.reason) + '</div></div>' +
+      actionsHtml;
+    meridianGrid.appendChild(card);
+  });
+
+  // ---- almanac ----
+  const covStrip = document.getElementById('coverage-strip');
+  data.almanac.coverage.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'coverage-chip';
+    chip.innerHTML =
+      '<div class="src mono">' + esc(c.source_id) + '</div>' +
+      '<div class="flags"><span>' + (c.reached ? '✓ reached' : '✗ unreached') + '</span>' +
+      '<span>' + (c.changed ? '✓ changed' : '– unchanged') + '</span>' +
+      '<span>' + (c.stale ? '⚠ stale' : '✓ fresh') + '</span></div>' +
+      (c.v1_sha256
+        ? '<div class="fingerprint">v1 <b>' + shortHash(c.v1_sha256) + '</b><br>v2 <b>' + shortHash(c.v2_sha256) + '</b></div>'
+        : '<div class="fingerprint">no fingerprint — source unreached</div>');
+    covStrip.appendChild(chip);
+  });
+
+  const diffBody = document.getElementById('graphdiff-body');
+  data.almanac.graph_diff.forEach(g => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="oblid mono">' + esc(g.obligation_id) + '</td>' +
+      '<td><span class="pill ' + pillClass(g.marking) + '">' + esc(g.marking) + '</span></td>';
+    diffBody.appendChild(tr);
+  });
+
+  const reopenContainer = document.getElementById('reopen-container');
+  data.almanac.reopened.forEach(r => {
+    const banner = document.createElement('div');
+    banner.className = 'reopen-banner';
+    banner.innerHTML =
+      '<span class="glyph">↺</span><span><strong>' + esc(r.holding_id) + ' / ' + esc(r.obligation_id) +
+      '</strong> reopened (' + esc(r.trigger) + ') — ' + esc(r.reason) + '</span>';
+    reopenContainer.appendChild(banner);
+  });
+
+  // ---- atlas chains ----
+  function renderChain(containerId, entries){
+    const el = document.getElementById(containerId);
+    entries.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'chain-entry agent-' + e.agent;
+      let detail = '';
+      if (e.step === 'closure') detail = e.payload.outcome + ' — ' + e.payload.reason;
+      else if (e.step === 'reopened') detail = e.payload.reason;
+      else if (e.step === 'gap_found') detail = e.payload.coverage + ' — ' + e.payload.reason;
+      else if (e.step === 'action_opened') detail = 'due ' + fmtDate(e.payload.deadline) + ', owner ' + esc(e.payload.owner);
+      else if (e.step === 'obligation_decomposed') detail = e.payload.change_type + ' — ' + e.payload.text;
+      div.innerHTML =
+        '<div class="chain-row1"><span class="chain-seq">#' + String(e.seq).padStart(3,'0') + '</span>' +
+        '<span class="chain-agent">' + e.agent + '</span><span class="chain-step">' + e.step + '</span></div>' +
+        '<div class="chain-detail">' + esc(detail) + '</div>' +
+        '<div class="chain-hash">' + shortHash(e.entry_hash) + '</div>';
+      el.appendChild(div);
+    });
+  }
+  renderChain('chain-obl-001', data.atlas_chain_obl_001);
+  renderChain('chain-obl-002', data.atlas_chain_obl_002);
+
+  // ---- source monitoring log ----
+  const sourceLogGroups = document.getElementById('source-log-groups');
+  Object.keys(data.source_access_log).forEach(sourceId => {
+    const entries = data.source_access_log[sourceId];
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '18px';
+    let rows = '';
+    entries.forEach(e => {
+      const p = e.payload;
+      rows +=
+        '<tr>' +
+        '<td class="mono">#' + String(e.seq).padStart(3, '0') + '</td>' +
+        '<td class="mono">' + esc(e.timestamp.slice(0, 19).replace('T', ' ')) + '</td>' +
+        '<td><span class="pill ' + (p.reached ? 'confirmed' : 'absent') + '">' + (p.reached ? 'reached' : 'unreached') + '</span></td>' +
+        '<td><span class="pill ' + (p.stale ? 'partial' : 'confirmed') + '">' + (p.stale ? 'stale' : 'fresh') + '</span></td>' +
+        '<td class="mono">' + (p.v1_sha256 ? shortHash(p.v1_sha256) : '—') + '</td>' +
+        '<td class="mono">' + (p.v2_sha256 ? shortHash(p.v2_sha256) : '—') + '</td>' +
+        '<td class="citation">' + (p.provisions_changed && p.provisions_changed.length ? esc(p.provisions_changed.join(', ')) : '—') + '</td>' +
+        '</tr>';
+    });
+    wrap.innerHTML =
+      '<div class="chain-title"><span class="mono">' + esc(sourceId) + '</span><span>' + entries.length + ' access' + (entries.length === 1 ? '' : 'es') + ' recorded</span></div>' +
+      '<div class="table-scroll" style="margin-top:8px;"><table><thead><tr>' +
+      '<th>Seq</th><th>Accessed at</th><th>Reached</th><th>Verification</th><th>v1 hash</th><th>v2 hash</th><th>Provisions changed</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    sourceLogGroups.appendChild(wrap);
+  });
+})();
+</script>

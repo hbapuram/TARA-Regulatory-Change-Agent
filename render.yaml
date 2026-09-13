@@ -1,0 +1,21 @@
+# Render blueprint for the public TARA demo.
+#
+# One click from the repo: Render dashboard → New → Blueprint → pick this repo.
+# It builds the package, installs the demo API's own deps, and serves both the
+# JSON API and the wizard page from a single origin (so no CORS to configure,
+# though the API allows any origin anyway for the artifact-hosted copy).
+#
+# Free plan sleeps after ~15 minutes idle and takes roughly a minute to wake.
+# Open the URL once before recording, and it stays warm.
+services:
+  - type: web
+    name: tara-demo
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt -r demo/requirements.txt && pip install --no-deps -e .
+    startCommand: python -m uvicorn demo.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"

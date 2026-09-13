@@ -1,0 +1,18 @@
+IRS Form 8621 Instructions — Information Return by a Shareholder of a
+Passive Foreign Investment Company or Qualified Electing Fund
+
+Instrument: IRS Form 8621 Instructions
+Issuing authority: Internal Revenue Service
+Provision: Section 4.2 — PFIC information return
+
+Section 4.2 — PFIC information return
+A United States person who is a shareholder of a Passive Foreign Investment
+Company (PFIC) — including a foreign mutual fund, foreign ETF, or other
+foreign pooled investment vehicle meeting the income or asset test under
+Section 1297 of the Internal Revenue Code — must file Form 8621 for each
+taxable year in which the shareholder receives a direct or indirect
+distribution from the PFIC, recognizes gain on a direct or indirect
+disposition of PFIC stock, or makes certain elections with respect to the
+PFIC, in addition to any FBAR or Form 8938 filing otherwise required.
+
+Last verified: 2026-09-10

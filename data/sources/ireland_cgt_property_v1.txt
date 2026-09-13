@@ -1,0 +1,59 @@
+CAPITAL GAINS TAX — DISPOSAL OF LAND AND BUILDINGS SITUATED IN THE STATE
+Office of the Revenue Commissioners
+Consolidated extract for TARA domain pack `ireland-cgt-property`
+
+Section 1.1 — Persons chargeable; specified assets
+A person who is neither resident nor ordinarily resident in the State for a
+year of assessment remains chargeable to capital gains tax for that year on
+chargeable gains accruing on the disposal of specified assets, being (among
+others) land in the State and buildings on such land. A gain on the disposal
+of land or buildings situated in the State is therefore within the charge to
+Irish capital gains tax irrespective of where the person disposing of it is
+resident. A person who is ordinarily resident in the State but not resident
+in it remains within the charge on the same assets.
+
+Section 1.2 — Rate of charge and annual personal exemption
+The standard rate of capital gains tax is 33 per cent of the chargeable gain.
+The first EUR 1,270 of chargeable gains accruing to an individual in a year
+of assessment is exempt from capital gains tax. The annual personal exemption
+is not transferable between spouses or civil partners, but is available
+separately to each.
+
+Section 1.3 — Payment of tax
+Capital gains tax is payable by reference to the period in which the disposal
+is made. Where the disposal is made in the initial period, being 1 January to
+30 November of a year of assessment, the tax is due and payable on or before
+15 December in that same year of assessment. Where the disposal is made in
+the later period, being 1 December to 31 December of a year of assessment,
+the tax is due and payable on or before 31 January in the following year of
+assessment.
+
+Section 1.4 — Return of the disposal
+A person who disposes of an asset must make a return of the disposal whether
+or not any tax is payable, and whether or not relief is claimed. The return
+is made on Form CG1, or within the income tax return (Form 11) where the
+person is a chargeable person for income tax purposes, on or before 31
+October of the year of assessment following the year in which the disposal
+was made.
+
+Section 1.5 — Deduction from consideration; clearance certificate
+Where the consideration for the disposal of an asset exceeds EUR 500,000, or
+EUR 1,000,000 in the case of a house or apartment, the person acquiring the
+asset is obliged to deduct 15 per cent of the consideration and remit it to
+the Revenue Commissioners, unless the person disposing of the asset produces
+a capital gains tax clearance certificate (Form CG50A) obtained in advance of
+completion. An amount so deducted is available as a credit against the
+capital gains tax liability of the person disposing of the asset.
+
+Section 1.6 — Principal private residence relief
+Relief from capital gains tax is available on the disposal of a dwelling
+house which has been occupied by the individual as their only or main
+residence throughout their period of ownership, together with land occupied
+as its gardens or grounds up to one acre exclusive of the site of the
+dwelling house. Where the dwelling house has been so occupied for part only
+of the period of ownership, the relief is restricted by reference to the
+proportion of that period for which it was so occupied. The last 12 months of
+the period of ownership are treated as a period of occupation in every case
+where the dwelling house was the individual's only or main residence at some
+time. A computation showing the apportionment relied on must be retained to
+substantiate a partial claim.

@@ -1,0 +1,42 @@
+Tax and Duty Manual — Part 27-01A-02
+Taxation of personal portfolio investment undertakings and offshore funds:
+the eight-year deemed disposal rule
+
+Instrument: Tax and Duty Manual Part 27-01A-02
+Issuing authority: Office of the Revenue Commissioners
+Provision: Section 4.2 — Deemed disposal at the eighth anniversary
+
+Section 4.1 — Application
+This section applies to a chargeable person who is Irish tax resident or ordinarily
+resident and who holds an interest in a personal portfolio investment undertaking,
+an offshore fund within the meaning of Chapter 4 of Part 27 TCA 1997, or a foreign
+life assurance policy in a jurisdiction outside the State.
+
+Section 4.2 — Deemed disposal at the eighth anniversary
+Where an interest described in Section 4.1 has been held continuously for a period
+of eight years, the holder is deemed to have disposed of, and immediately
+reacquired, that interest on the eighth anniversary of its acquisition, whether or
+not an actual disposal has occurred. The deemed disposal recurs on each subsequent
+eighth anniversary for as long as the interest continues to be held.
+
+Section 4.3 — Rate of charge
+Tax arising on a deemed disposal under Section 4.2 is chargeable at the rate of
+38 per cent of the deemed gain, for deemed disposals arising on or after
+1 January 2026.
+
+Section 4.4 — Return and payment obligation
+A chargeable person to whom Section 4.2 applies must include the deemed gain in
+their return of income for the chargeable period in which the eighth anniversary
+falls, and must pay the tax due on or before the specified return date for that
+chargeable period. Failure to include the deemed gain constitutes an incorrect
+return.
+
+Section 4.5 — Credit on actual disposal
+Where an actual disposal of the interest subsequently occurs, credit is given for
+tax already paid on any deemed disposal in respect of that interest, so as to
+avoid a double charge on the same economic gain. The holder must retain
+documentary evidence of the deemed disposal computation and the tax paid in order
+to substantiate the credit claimed.
+
+Last verified: 2026-09-10
+Source: Revenue Tax and Duty Manual Part 27-01A-02 (public guidance)

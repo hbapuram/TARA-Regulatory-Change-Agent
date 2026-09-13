@@ -1,0 +1,65 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//TARA//Compliance Calendar Exporter//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:ACT-OBL-CORR-001-HLD-001@tara.local
+DTSTAMP:20260912T152909Z
+DTSTART;VALUE=DATE:20180703
+DTEND;VALUE=DATE:20180703
+SUMMARY:[india-ireland-corridor] OBL-CORR-001 due (Synthetic Holder A)
+DESCRIPTION:Holding(s): HLD-001\, HLD-002\, HLD-003\, HLD-004\nObligation: 
+ OBL-CORR-001\nProvision: Section 6.2\nOwner: Synthetic Holder A\nRequired 
+ evidence: nro_redesignation_confirmation\nEscalated: False
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Compliance deadline in 7 days
+TRIGGER:-P7D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ACT-OBL-IRP-001-HLD-004@tara.local
+DTSTAMP:20260912T152909Z
+DTSTART;VALUE=DATE:20181130
+DTEND;VALUE=DATE:20181130
+SUMMARY:[ireland-irp] OBL-IRP-001 due (Synthetic Holder A)
+DESCRIPTION:Holding(s): HLD-004\nObligation: OBL-IRP-001\nProvision: Sectio
+ n 1.1\nOwner: Synthetic Holder A\nRequired evidence: irp_initial_registrat
+ ion\nEscalated: False
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Compliance deadline in 7 days
+TRIGGER:-P7D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ACT-OBL-CORR-002-HLD-001@tara.local
+DTSTAMP:20260912T152909Z
+DTSTART;VALUE=DATE:20260802
+DTEND;VALUE=DATE:20260802
+SUMMARY:[india-ireland-corridor] OBL-CORR-002 due (Synthetic Holder A)
+DESCRIPTION:Holding(s): HLD-001\, HLD-002\, HLD-003\, HLD-004\nObligation: 
+ OBL-CORR-002\nProvision: Section 6.3\nOwner: Synthetic Holder A\nRequired 
+ evidence: form_10f_and_trc\nEscalated: False
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Compliance deadline in 7 days
+TRIGGER:-P7D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ACT-OBL-IRP-002-HLD-004@tara.local
+DTSTAMP:20260912T152909Z
+DTSTART;VALUE=DATE:20260915
+DTEND;VALUE=DATE:20260915
+SUMMARY:[ireland-irp] OBL-IRP-002 due (Synthetic Holder A)
+DESCRIPTION:Holding(s): HLD-004\nObligation: OBL-IRP-002\nProvision: Sectio
+ n 1.2\nOwner: Synthetic Holder A\nRequired evidence: irp_renewal\nEscalate
+ d: False
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Compliance deadline in 7 days
+TRIGGER:-P7D
+END:VALARM
+END:VEVENT
+END:VCALENDAR

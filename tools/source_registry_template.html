@@ -1,0 +1,233 @@
+<title>TARA Source Registry</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --masthead-bg:#12181a; --masthead-fg:#f4efe2; --masthead-mid:#9ba39c; --masthead-rule:#2a3134;
+    --paper:#efede3; --card:#faf9f3; --ink:#14181a; --body:#3c4247; --mid:#6e7871;
+    --rule:#ddd9c6; --rule-strong:#cac5ac;
+    --open:#1f7a5c; --open-tint:#e2ede6;
+    --tenant:#5b3fa6; --tenant-tint:#eae5f7;
+    --atlas:#a85a1f; --atlas-tint:#f3e6d7;
+    --accent:#1a4a6b; --accent-tint:#e2ecf1;
+    --danger:#b23a3a; --danger-tint:#f6e4e2;
+    --warning:#96721a; --warning-tint:#f3ecd8;
+    --shadow: 0 1px 2px rgba(20,24,26,.06), 0 4px 14px rgba(20,24,26,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --masthead-bg:#0c0f10; --masthead-fg:#f2ede0; --masthead-mid:#8b958e; --masthead-rule:#22282a;
+      --paper:#15191b; --card:#1c2124; --ink:#eeeae0; --body:#c7cdc7; --mid:#8b958e;
+      --rule:#2a302c; --rule-strong:#394038;
+      --open:#4db38a; --open-tint:#182620;
+      --tenant:#a68ee8; --tenant-tint:#241f36;
+      --atlas:#e0954f; --atlas-tint:#2c2119;
+      --accent:#6fa8cf; --accent-tint:#182530;
+      --danger:#e28787; --danger-tint:#2c1c1c;
+      --warning:#d8b25b; --warning-tint:#2b2416;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 18px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --masthead-bg:#0c0f10; --masthead-fg:#f2ede0; --masthead-mid:#8b958e; --masthead-rule:#22282a;
+    --paper:#15191b; --card:#1c2124; --ink:#eeeae0; --body:#c7cdc7; --mid:#8b958e;
+    --rule:#2a302c; --rule-strong:#394038;
+    --open:#4db38a; --open-tint:#182620;
+    --tenant:#a68ee8; --tenant-tint:#241f36;
+    --atlas:#e0954f; --atlas-tint:#2c2119;
+    --accent:#6fa8cf; --accent-tint:#182530;
+    --danger:#e28787; --danger-tint:#2c1c1c;
+    --warning:#d8b25b; --warning-tint:#2b2416;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 18px rgba(0,0,0,.35);
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; background:var(--paper); color:var(--body); font-family:"Public Sans", ui-sans-serif, system-ui, sans-serif; font-size:15px; line-height:1.6; }
+  h1,h2,h3{ font-family:"Spectral", Georgia, serif; color:var(--ink); text-wrap:balance; margin:0; }
+  code, .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; }
+  a{ color:var(--accent); }
+
+  .masthead{ background:var(--masthead-bg); color:var(--masthead-fg); padding:30px 28px 22px; }
+  .masthead-inner{ max-width:1100px; margin:0 auto; }
+  .wordmark{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .wordmark h1{ color:var(--masthead-fg); font-size:28px; font-weight:700; letter-spacing:-.02em; }
+  .wordmark .full-name{ font-size:13.5px; color:var(--masthead-mid); font-weight:500; }
+  .masthead-sub{ margin-top:8px; font-size:14.5px; color:#cfd6cd; max-width:680px; }
+  .masthead-facts{ display:flex; flex-wrap:wrap; gap:22px; margin-top:18px; padding-top:14px; border-top:1px solid var(--masthead-rule); }
+  .fact-k{ font-family:"JetBrains Mono"; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--masthead-mid); }
+  .fact-v{ font-size:14px; font-weight:600; color:var(--masthead-fg); margin-top:3px; }
+  .fact-v.warn{ color:#e0954f; }
+
+  .nav{ position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--rule); padding:10px 28px; }
+  .nav-inner{ max-width:1100px; margin:0 auto; display:flex; gap:7px; flex-wrap:wrap; }
+  .nav a{ font-family:"JetBrains Mono"; font-size:11px; text-decoration:none; color:var(--body); padding:6px 12px; border:1px solid var(--rule-strong); border-radius:20px; background:var(--card); white-space:nowrap; }
+  .nav a:hover{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+  .wrap{ max-width:1100px; margin:0 auto; padding:8px 28px 64px; }
+  section{ padding-top:46px; scroll-margin-top:56px; }
+  .lede{ font-size:14.5px; color:var(--mid); max-width:680px; margin-top:6px; }
+  h2{ font-size:22px; font-weight:600; letter-spacing:-.01em; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; font-family:"JetBrains Mono"; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--mid); font-weight:500; padding:0 12px 8px 0; border-bottom:1px solid var(--rule-strong); }
+  td{ padding:10px 12px 10px 0; border-bottom:1px solid var(--rule); vertical-align:top; color:var(--body); }
+  tr:last-child td{ border-bottom:none; }
+  .table-scroll{ overflow-x:auto; background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:6px 16px; box-shadow:var(--shadow); margin-top:18px; }
+  .mono-cell{ font-family:"JetBrains Mono"; font-size:12px; white-space:nowrap; }
+  .dim{ color:var(--mid); font-size:12px; }
+
+  .pill{ display:inline-flex; align-items:center; gap:5px; font-family:"JetBrains Mono"; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .pill.fresh{ background:var(--open-tint); color:var(--open); }
+  .pill.stale{ background:var(--danger-tint); color:var(--danger); }
+  .pill.reached{ background:var(--open-tint); color:var(--open); }
+  .pill.unreached{ background:var(--danger-tint); color:var(--danger); }
+  .pill.changed{ background:var(--warning-tint); color:var(--warning); }
+  .pill.unchanged{ background:var(--rule); color:var(--mid); }
+  .pill.corridor{ background:var(--atlas-tint); color:var(--atlas); }
+  .pill.standalone{ background:var(--tenant-tint); color:var(--tenant); }
+
+  .domain-heading{ display:flex; align-items:center; gap:10px; margin-top:28px; }
+  .domain-heading:first-child{ margin-top:0; }
+  .domain-heading h3{ font-size:15px; }
+  .footer-note{ margin-top:40px; padding-top:18px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--mid); }
+</style>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="wordmark">
+      <h1>Source Registry</h1>
+      <span class="full-name">every source TARA relies on, where it came from, and how fresh it is</span>
+    </div>
+    <p class="masthead-sub">Not an event log — a current-state answer to "what do we believe right now, and on what authority." Every obligation any agent can return traces to a row here.</p>
+    <div class="masthead-facts" id="facts"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a href="#sources">Sources</a>
+    <a href="#obligations">Obligations</a>
+    <a href="#checks">Check history</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="sources">
+    <h2>Sources</h2>
+    <p class="lede">One row per authoritative document this system reads. <code>last_verified</code> and staleness are not decorative — ANCHOR and ALMANAC both key real behavior off them.</p>
+    <div id="sources-by-domain"></div>
+  </section>
+
+  <section id="obligations">
+    <h2>Obligations</h2>
+    <p class="lede">Every obligation any agent can hand back to a holder, traced to the exact source and provision it was decomposed from.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Obligation</th><th>Domain</th><th>Provision</th><th>Source</th><th>Severity</th><th>Lineage</th></tr></thead>
+        <tbody id="obligations-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="checks">
+    <h2>Check history</h2>
+    <p class="lede">Every time SURVEY has actually looked at a source — reached or not, changed or not — independent of what any obligation later did with it.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Source</th><th>Checked at</th><th>Reached</th><th>Changed</th><th>Stale</th><th>v1 sha256</th><th>v2 sha256</th></tr></thead>
+        <tbody id="checks-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    Generated by <code>tools/build_source_registry.py</code> from <code>registers/source_registry.db</code> — a real, queryable SQLite database, not a derived-only view. Regenerate any time a domain pack or source snapshot changes.
+  </div>
+</div>
+
+<script>
+const DATA = __REGISTRY_DATA_JSON__;
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function pill(cls, label){ return `<span class="pill ${cls}">${esc(label)}</span>`; }
+function shortHash(h){ return h ? h.slice(0, 16) + "…" : "—"; }
+
+function ageDays(lastVerified){
+  const then = new Date(lastVerified + "T00:00:00Z").getTime();
+  const now = Date.now();
+  return (now - then) / 86400000;
+}
+
+function render(){
+  const domainsById = Object.fromEntries(DATA.domains.map(d => [d.domain_id, d]));
+
+  const totalSources = DATA.sources.length;
+  const staleSources = DATA.sources.filter(s => ageDays(s.last_verified) > s.max_verification_age_days).length;
+  document.getElementById("facts").innerHTML = `
+    <div><div class="fact-k">Domains linked</div><div class="fact-v">${DATA.domains.length}</div></div>
+    <div><div class="fact-k">Sources tracked</div><div class="fact-v">${totalSources}</div></div>
+    <div><div class="fact-k">Obligations catalogued</div><div class="fact-v">${DATA.obligations.length}</div></div>
+    <div><div class="fact-k">Stale right now</div><div class="fact-v ${staleSources ? 'warn' : ''}">${staleSources}</div></div>
+  `;
+
+  // Sources grouped by domain
+  const byDomain = {};
+  for (const s of DATA.sources) (byDomain[s.domain_id] ??= []).push(s);
+
+  const sourcesEl = document.getElementById("sources-by-domain");
+  sourcesEl.innerHTML = Object.entries(byDomain).map(([domainId, sources]) => {
+    const d = domainsById[domainId] || {};
+    const badge = d.is_corridor ? pill("corridor", "corridor") : pill("standalone", "standalone");
+    const rows = sources.map(s => {
+      const age = ageDays(s.last_verified);
+      const stale = age > s.max_verification_age_days;
+      return `<tr>
+        <td class="mono-cell">${esc(s.source_id)}</td>
+        <td>${esc(s.instrument)}<div class="dim">${esc(s.issuing_authority)}</div></td>
+        <td><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.length > 46 ? s.url.slice(0,46) + "…" : s.url)}</a></td>
+        <td class="mono-cell">${esc(s.last_verified)}</td>
+        <td>${stale ? pill("stale", `stale (${age.toFixed(0)}d)`) : pill("fresh", `fresh (${age.toFixed(0)}d / ${s.max_verification_age_days}d)`)}</td>
+      </tr>`;
+    }).join("");
+    return `
+      <div class="domain-heading"><h3>${esc(d.title || domainId)}</h3>${badge}</div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Source ID</th><th>Instrument / authority</th><th>URL</th><th>Last verified</th><th>Freshness</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }).join("");
+
+  // Obligations
+  document.getElementById("obligations-body").innerHTML = DATA.obligations.map(o => {
+    const d = domainsById[o.domain_id] || {};
+    let lineage = "—";
+    if (o.superseded_by) lineage = `superseded by <span class="mono-cell">${esc(o.superseded_by)}</span>`;
+    else if (o.supersedes) lineage = `supersedes <span class="mono-cell">${esc(o.supersedes)}</span>`;
+    else if (o.introduced_in) lineage = `introduced in ${esc(o.introduced_in)}`;
+    return `<tr>
+      <td class="mono-cell">${esc(o.obligation_id)}</td>
+      <td>${esc(d.title || o.domain_id)}</td>
+      <td class="mono-cell">${esc(o.provision)}</td>
+      <td class="mono-cell">${esc(o.source_id)}</td>
+      <td>${esc(o.severity)}</td>
+      <td class="dim">${lineage}</td>
+    </tr>`;
+  }).join("");
+
+  // Check history
+  document.getElementById("checks-body").innerHTML = DATA.checks.map(c => `
+    <tr>
+      <td class="mono-cell">${esc(c.source_id)}</td>
+      <td class="mono-cell">${esc(c.checked_at)}</td>
+      <td>${c.reached ? pill("reached","reached") : pill("unreached","unreached")}</td>
+      <td>${c.changed ? pill("changed","changed") : pill("unchanged","unchanged")}</td>
+      <td>${c.stale ? pill("stale","stale") : pill("fresh","fresh")}</td>
+      <td class="mono-cell dim">${shortHash(c.v1_sha256)}</td>
+      <td class="mono-cell dim">${shortHash(c.v2_sha256)}</td>
+    </tr>`).join("");
+}
+
+render();
+</script>

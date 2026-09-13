@@ -1,0 +1,178 @@
+# domains/india.yaml
+# Challenge 23 — Regulatory Change-to-Action Agent
+# Problem statement: foreign-asset & foreign-income disclosure for individuals
+# Resident and Ordinarily Resident (ROR) in India — Schedule FA / Schedule FSI.
+#
+# Standalone, single-jurisdiction pack: same shape as domains/tax.yaml, loaded
+# and evaluated by the same agents, no code changed. Independently queryable —
+# "what does Indian tax law require of me?" is answerable from this file alone,
+# with no reference to any other country's pack. It is also one of the two
+# packs MERIDIAN checks a holder's facts against when it looks for a corridor
+# (see domains/india-ireland.yaml) — the corridor pack cross-references this
+# one's residency test, it does not replace it.
+
+domain_id: india-fa
+title: Foreign Asset & Income Disclosure — Schedule FA / Schedule FSI (Resident and Ordinarily Resident individuals)
+sector: Finance & Insurance
+
+# ─────────────────────────── OPEN — same for every tenant ───────────────────────────
+open:
+
+  sources:
+    - source_id: cbdt-schedule-fa
+      instrument: "Income Tax Return Instructions — Schedule FA (Foreign Assets) & Schedule FSI (Foreign Source Income)"
+      issuing_authority: "Central Board of Direct Taxes"
+      url: "https://www.incometaxindia.gov.in/w/schedule_fa"
+      v1_path: data/sources/india_schedule_fa_v1.txt
+      v2_path: data/sources/india_schedule_fa_v2.txt
+      last_verified: "2026-08-15"
+      max_verification_age_days: 120
+
+    # Added as part of the "handful more per country" breadth pass
+    # (2026-09-10), then checked against incometaxindia.gov.in/w/form-67
+    # and Rule 128's 2022 amendment. Rule 128: Form 67 is governed by
+    # Rule 128 of the Income-tax Rules, 1962, filed by a resident assessee
+    # claiming foreign tax credit — confirmed. The deadline text below
+    # reflects the amended rule (filed on or before the end of the
+    # assessment year, not strictly before the return itself), corrected
+    # from an earlier draft that had this wrong.
+    - source_id: cbdt-form-67
+      instrument: "Form 67 Instructions (Statement of Income from a Country or Specified Territory Outside India and Foreign Tax Credit)"
+      issuing_authority: "Central Board of Direct Taxes"
+      url: "https://www.incometax.gov.in/iec/foportal/help/statutory-forms/popular-form/form67-um"
+      v1_path: data/sources/india_form67_ftc_v1.txt
+      v2_path: data/sources/india_form67_ftc_v2.txt
+      last_verified: "2026-09-10"
+      max_verification_age_days: 120
+
+  obligations:
+    - obligation_id: OBL-IN-001
+      provision: "Section 2.2"
+      source_id: cbdt-schedule-fa
+      text: >
+        A Resident and Ordinarily Resident (ROR) individual who, at any time
+        during the relevant accounting period, holds a foreign asset —
+        including a foreign bank account, foreign equity or debt interest,
+        foreign immovable property, or any other financial interest outside
+        India — must disclose that asset in Schedule FA of the return of
+        income for the corresponding assessment year, whether or not it
+        produced any income.
+      severity: high
+      artefact_type: schedule_fa_disclosure
+      depends_on: []
+
+    - obligation_id: OBL-IN-002
+      provision: "Section 2.3"
+      source_id: cbdt-schedule-fa
+      text: >
+        Income earned outside India by a Resident and Ordinarily Resident
+        individual must be reported in Schedule FSI of the return of income,
+        together with any foreign tax credit claimed against it under an
+        applicable double taxation avoidance agreement.
+      severity: medium
+      artefact_type: schedule_fsi_disclosure
+      depends_on: ["OBL-IN-001"]
+
+    # Same source as OBL-IN-001 (Section 2.4 extends Section 2.2's scope) —
+    # not a separate instrument, just a distinct, separately-citable
+    # provision within it. Confirmed against incometaxindia.gov.in/w/schedule_fa
+    # (2026-09-10): the schedule applies to holders who "hold, own, or have
+    # a beneficial interest in foreign assets" and separately requires
+    # disclosure of trust interests "as trustee, settlor, or beneficiary."
+    - obligation_id: OBL-IN-003
+      provision: "Section 2.4"
+      source_id: cbdt-schedule-fa
+      text: >
+        The Schedule FA disclosure obligation under Section 2.2 extends to
+        an individual who holds a foreign asset as a beneficial owner or as
+        a beneficiary, and not only where legal title is held directly. An
+        individual within scope who is a beneficial owner of, or a
+        beneficiary in, a foreign trust, foreign entity or foreign account
+        must disclose that interest in Schedule FA whether or not any
+        distribution was received during the period.
+      severity: high
+      artefact_type: schedule_fa_disclosure
+      depends_on: []
+
+    - obligation_id: OBL-IN-004
+      provision: "Section 5.1"
+      source_id: cbdt-form-67
+      text: >
+        An individual claiming a credit against Indian tax for foreign tax
+        paid or deducted on income reported in Schedule FSI under an
+        applicable double taxation avoidance agreement must furnish Form 67,
+        giving particulars of the foreign income and the foreign tax
+        charged on it, on or before the end of the relevant assessment
+        year, provided the return of income for that year was itself filed
+        within the time allowed under Section 139(1) or Section 139(4).
+      severity: medium
+      artefact_type: form_67_ftc_claim
+      depends_on: ["OBL-IN-002"]
+
+# ─────────────────────────── TENANT — differs per customer ──────────────────────────
+tenant:
+
+  register_schema:
+    entity: holding
+    fields:
+      - holding_id
+      - instrument_type
+      - jurisdiction
+      - acquisition_date
+      - status
+      - tax_residencies     # holder-level fact, merged onto every holding — see TaraContext.holding()
+
+  scoping_questions:
+    - question_id: SQ-IN-01
+      text: "Is the holder Resident and Ordinarily Resident (ROR) in India for the relevant accounting period?"
+      answerable_from_register: true
+      register_field: tax_residencies
+      provision: "Section 2.1"
+      expect:
+        contains: "India"
+      on_fail: EXEMPT
+      fail_reason_template: "Holder's tax residencies ({value}) do not include India, so Schedule FA/FSI disclosure under {provision} does not apply."
+
+  date_triggers:
+    - trigger_id: DT-IN-01
+      obligation_id: OBL-IN-001
+      description: "Schedule FA disclosure falls due with the return of income for each assessment year the asset is held, recurring annually."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+    - trigger_id: DT-IN-02
+      obligation_id: OBL-IN-002
+      description: "Schedule FSI disclosure falls due on the same annual cycle as Schedule FA."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+    - trigger_id: DT-IN-03
+      obligation_id: OBL-IN-003
+      description: "Beneficial-ownership Schedule FA disclosure follows the same annual cycle as Section 2.2's own disclosure."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+    - trigger_id: DT-IN-04
+      obligation_id: OBL-IN-004
+      description: "Form 67 is filed annually, by the end of the assessment year (not strictly with the return itself), for each year a foreign tax credit is claimed."
+      base_field: acquisition_date
+      interval_years: 1
+      recurring: true
+
+  evidence_rules:
+    OBL-IN-001:
+      artefact_type: schedule_fa_disclosure
+      required_fields: [assessment_year, asset_description, peak_balance]
+      lead_time_days: 30
+    OBL-IN-002:
+      artefact_type: schedule_fsi_disclosure
+      required_fields: [assessment_year, foreign_income_amount]
+      lead_time_days: 30
+    OBL-IN-003:
+      artefact_type: schedule_fa_disclosure
+      required_fields: [assessment_year, asset_description, beneficial_interest_type]
+      lead_time_days: 30
+    OBL-IN-004:
+      artefact_type: form_67_ftc_claim
+      required_fields: [assessment_year, foreign_tax_paid_amount]
+      lead_time_days: 15

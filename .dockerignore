@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+tara.egg-info/
+tools/__pycache__/
+tools/_demo_atlas_log.jsonl
+tools/_demo_graph_version.json
+tools/_console_atlas_log.jsonl
+tools/_console_graph_version.json
+.git/
+.env

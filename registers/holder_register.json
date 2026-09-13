@@ -1,0 +1,52 @@
+{
+  "holder": {
+    "holder_id": "H-001",
+    "name": "Synthetic Holder A",
+    "residency": "Irish tax resident",
+    "citizenships": ["India"],
+    "tax_residencies": ["Ireland"],
+    "tax_residency_since": "2018-09-01",
+    "eea_swiss_uk_national": false,
+    "_note": "Deliberately a corridor holder: Indian citizen, Irish tax resident since 2018-09-01, resident nowhere else. Standalone India/US packs should return EXEMPT for her (she is not Indian- or US-resident/citizen); the India-Ireland corridor pack is the one that should CONFIRM against her, because it looks at citizenship x tax residency together, not either alone. eea_swiss_uk_national: false for the same reason she needed to register at all: an Indian citizen is not an EEA, Swiss or UK national, so the Irish IRP pack (domains/ireland-irp.yaml) is in scope for her too — a second, non-tax domain pack confirming against the same holder, on a fact this register already carried."
+  },
+  "holdings": [
+    {
+      "holding_id": "HLD-001",
+      "instrument_type": "offshore_fund",
+      "jurisdiction": "Luxembourg",
+      "acquisition_date": "2019-03-14",
+      "holder_residency": "Irish tax resident",
+      "status": "held",
+      "_note": "Acceptance-criterion holding: 2019-03-14 acquisition -> next 8-year deemed disposal is 2027-03-14."
+    },
+    {
+      "holding_id": "HLD-002",
+      "instrument_type": "foreign_life_assurance_policy",
+      "jurisdiction": "Isle of Man",
+      "acquisition_date": "2023-01-10",
+      "holder_residency": "Irish tax resident",
+      "status": "held",
+      "_note": "Deliberately unaffected: held under 8 years, no deemed disposal has yet arisen."
+    },
+    {
+      "holding_id": "HLD-003",
+      "instrument_type": "direct_equity",
+      "jurisdiction": "India",
+      "acquisition_date": "2015-06-01",
+      "holder_residency": "Irish tax resident",
+      "status": "held",
+      "_note": "Deliberately unaffected: instrument type is outside Section 4.1 scope -> COMPASS returns EXEMPT."
+    },
+    {
+      "holding_id": "HLD-004",
+      "instrument_type": "immigration_permission",
+      "jurisdiction": "Ireland",
+      "acquisition_date": "2025-09-15",
+      "holder_residency": "Irish tax resident",
+      "irp_registration_due_date": "2018-11-30",
+      "irp_expiry_date": "2026-09-15",
+      "status": "held",
+      "_note": "Not a financial asset -- the ireland-irp.yaml domain pack (a non-tax, non-Finance sector) treats an immigration permission as a 'holding' in exactly the same generic register shape as an offshore fund or an equity position, proving the register schema is domain-agnostic too. irp_registration_due_date is precomputed here as her 2018-09-01 arrival (tax_residency_since) + 90 days = 2018-11-30, for the one-time DT-IRP-01 trigger. irp_expiry_date is the current permission's actual expiry -- a real fact, not derived from acquisition_date by assuming a fixed term (IRP terms vary and ISD guidance never states one) -- deliberately close to today (2026-09-10) so the demo surfaces a live, near-term renewal deadline rather than a dormant one; acquisition_date (2025-09-15) is kept as the current permission's grant/last-renewal date for record-keeping, but DT-IRP-02 triggers off irp_expiry_date, not off an assumed annual cycle from acquisition_date."
+    }
+  ]
+}
