@@ -112,4 +112,3 @@ Lead with Maeve and the wrong-but-consistent 41% calculation. First show the sim
 
 For a slide deck, use a hyperlink or QR code to [https://tara-demo.onrender.com/](https://tara-demo.onrender.com/) and keep two backup screenshots. Do not rely only on an embedded live web view.
 
-Use the [judge-facing slide checklist](judge-slide-checklist.md) to map the seven-minute pitch to the official Problem & Customer, Solution, Commercial Focus, and Build with AI criteria.

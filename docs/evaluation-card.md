@@ -32,23 +32,7 @@ flowchart LR
 
 **Test inventory:** `115 tests collected`. The canonical command is `pytest -q`.
 
-## Competition readiness score
-
-This is an **internal evidence-based readiness estimate, not an organiser or judge score**.
-
-| Dimension | Weight | Current | Why |
-|---|---:|---:|---|
-| Problem clarity and relevance | 18 | 17 | Clear change-to-action problem with a memorable human consequence. |
-| Innovation and agent design | 18 | 16 | Open/tenant bands, data-driven domain packs, MCP tools, and an auditable multi-agent handoff. |
-| Technical architecture | 15 | 14 | Deterministic core, explicit band order, reusable packs, deployable API, and regression coverage. |
-| Correctness and safety | 18 | 15 | Effective-date selection, obligation-level predicates, fail-closed missing facts, exact evidence checks, and disclaimers. Independent professional validation is still pending. |
-| Evidence and demo quality | 12 | 11 | Tested golden path, offline replay, live deployment, source hashes, and this executable card. |
-| Usability and storytelling | 9 | 8 | Recommended path first, plain-language explanations, visual guide, and exploratory cases clearly labelled. |
-| Validation and traction | 6 | 2 | No external user interviews, signed design partner, or SME sign-off is claimed. |
-| Release and documentation quality | 4 | 4 | Reproducible setup, public-release manifest, tests, deployment notes, and one-stop guide. |
-| **Total** | **100** | **87** | **Finalist-grade internal readiness; external validation is the main remaining gap.** |
-
-## Boundaries judges should know
+## Boundaries
 
 TARA is a **prototype decision-support system**, not legal, tax, immigration, or filing advice. The live demo uses controlled source snapshots and synthetic profiles. A pack-level `CONFIRMED` result means the rule family is relevant; each obligation is then checked separately for its instrument, event, threshold, and effective date. Missing material facts produce `indeterminate` and no automated action.
 
