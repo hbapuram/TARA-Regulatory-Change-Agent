@@ -19,3 +19,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: TARA_LLM_MODEL
+        value: "gpt-4.1-mini"
+      - key: TARA_LLM_MAX_TURNS
+        value: "12"
+      # Set OPENAI_API_KEY as a secret in the hosting service. It is never
+      # sent to the browser or to the MCP subprocess.

@@ -29,6 +29,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
@@ -126,6 +127,8 @@ async def _run_async(
     model: str,
     max_turns: int,
     server_command: list[str] | None = None,
+    server_env: dict[str, str] | None = None,
+    required_tools: set[str] | None = None,
 ) -> OrchestratorResult:
     from openai import AsyncOpenAI
 
@@ -136,10 +139,19 @@ async def _run_async(
             "which runs the identical pipeline with no model in the loop."
         )
 
-    client = AsyncOpenAI(api_key=api_key)
+    # The public demo can use either OpenAI's native endpoint or an
+    # OpenAI-compatible gateway. OPENAI_BASE_URL is the SDK-native variable;
+    # OPENAI_API_BASE remains supported for common compatible deployments.
+    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("OPENAI_API_BASE")
+    client = AsyncOpenAI(api_key=api_key, base_url=base_url or None, timeout=45.0)
 
     command, *args = server_command or [sys.executable, "-m", "tara.mcp_server.server"]
-    server_params = StdioServerParameters(command=command, args=args)
+    server_params = StdioServerParameters(
+        command=command,
+        args=args,
+        env=server_env,
+        cwd=str(Path(__file__).resolve().parents[2]),
+    )
 
     tool_calls: list[ToolCallRecord] = []
 
@@ -166,6 +178,17 @@ async def _run_async(
                 messages.append(assistant_message.model_dump(exclude_none=True))
 
                 if not assistant_message.tool_calls:
+                    missing = sorted((required_tools or set()) - {call.name for call in tool_calls})
+                    if missing:
+                        messages.append({
+                            "role": "user",
+                            "content": (
+                                "Before giving the final answer, you must call these required TARA MCP tools "
+                                f"for this investigation: {', '.join(missing)}. Use only exact IDs returned by "
+                                "the discovery tools, then return to the requested plain-language answer."
+                            ),
+                        })
+                        continue
                     return OrchestratorResult(answer=assistant_message.content or "", tool_calls=tool_calls)
 
                 for call in assistant_message.tool_calls:
@@ -202,6 +225,8 @@ def run(
     model: str = "gpt-4.1-mini",
     max_turns: int = 8,
     server_command: list[str] | None = None,
+    server_env: dict[str, str] | None = None,
+    required_tools: set[str] | None = None,
 ) -> OrchestratorResult:
     """Synchronous entry point. Spawns the MCP server as a subprocess,
     connects as a client over stdio, and loops OpenAI tool calls until the
@@ -219,4 +244,4 @@ def run(
             "OPENAI_API_KEY is not set. Use `python -m tara.cli demo --direct` instead, "
             "which runs the identical pipeline with no model in the loop."
         )
-    return asyncio.run(_run_async(prompt, model, max_turns, server_command))
+    return asyncio.run(_run_async(prompt, model, max_turns, server_command, server_env, required_tools))

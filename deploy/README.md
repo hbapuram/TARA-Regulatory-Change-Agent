@@ -5,18 +5,20 @@ This closes a gap the repo had been pointing at without filling in: both
 deploy/README.md" — this file is that pointer, written from what's
 actually in the Dockerfile and CLI, not aspirational.
 
-The server (`tara/mcp_server/server.py`) exposes the same 10 MCP tools
+The server (`tara/mcp_server/server.py`) exposes the same 12 MCP tools
 either way — `stdio` (a local subprocess, what `tara demo` and the MCP
 Inspector use) or `streamable-http` (a standalone, network-reachable
 service). Nothing about the agents, domain packs, or ATLAS ledger changes
 between the two; only the transport does.
 
 > **Current deployment boundary:** the browser demo is live at
-> [https://tara-demo.onrender.com](https://tara-demo.onrender.com), but that
-> service exposes the safe browser-facing FastAPI adapter—not `/mcp`. The MCP
-> server described here is a local or controlled-environment prototype. Do not
-> deploy it publicly with real data until authentication, tenant isolation,
-> rate limits, durable state, and operational monitoring are implemented.
+> [https://tara-demo.onrender.com](https://tara-demo.onrender.com). Its default
+> path uses a server-side OpenAI model to call a local, request-scoped MCP
+> subprocess, then displays an inspectable trace. It does **not** expose `/mcp`
+> publicly. The MCP server described here remains a local or
+> controlled-environment prototype. Do not deploy it publicly with real data
+> until authentication, tenant isolation, rate limits, durable state, and
+> operational monitoring are implemented.
 
 ## Build and run locally
 

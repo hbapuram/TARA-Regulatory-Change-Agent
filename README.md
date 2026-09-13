@@ -6,22 +6,23 @@ TARA answers a focused question: **a rule changed—who is affected, what should
 
 ```mermaid
 flowchart LR
-    A[A rule changes] --> B[TARA shows the exact difference]
-    B --> C{Does it affect this person?}
-    C -->|Information missing| D[Ask; do not guess]
-    C -->|No| E[Explain why it does not apply]
-    C -->|Yes| F[Create a dated action plan]
-    F --> G{Is the evidence correct?}
-    G -->|No| H[Return it with a clear reason]
-    G -->|Yes| I[Mark it ready for human review]
-    A & B & C & F & G --> J[(Keep an inspectable proof record)]
+    A[Rule changes] --> B[LLM understands the request]
+    B --> C[MCP discovers TARA tools]
+    C --> D[Deterministic TARA checks source, dates and facts]
+    D --> E{Information missing?}
+    E -->|Yes| F[Ask; do not guess]
+    E -->|No| G[Create a dated action plan]
+    G --> H{Is the evidence correct?}
+    H -->|No| I[Return it with a clear reason]
+    H -->|Yes| J[Ready for human review]
+    C & D & G & H --> K[(Keep an inspectable proof record)]
 ```
 
 ## Start here
 
 | Resource | Use it for |
 |---|---|
-| [Live demo](https://tara-demo.onrender.com/) | The interactive, deployed prototype. Choose **Maeve** for the tested judge path. |
+| [Live demo](https://tara-demo.onrender.com/) | The interactive, **LLM-first** prototype. Choose **Maeve** for the tested judge path; use the AI/MCP control to reach the deterministic backup. |
 | [Complete visual guide](https://tara-demo.onrender.com/guide) | One-stop explanation: picture first, technical detail second; source lives at `docs/tara-project-guide.html`. |
 | [Evaluation card](docs/evaluation-card.md) | Reproducible acceptance checks and the current evidence-based readiness score. |
 | [Competition truth sheet](docs/competition-truth-sheet.md) | Canonical claims, boundaries, and presenter preflight. |
@@ -42,14 +43,16 @@ The primary demonstration is deliberately narrow and synthetic:
 
 The browser labels **Maeve** as the recommended path. Ciarán, Priya, and Arun are exploratory breadth cases and must not be described as independently validated legal advice.
 
-## Why this is more than a chatbot
+## Why this is an AI agent, not a chatbot
 
-- **Models never own decisive calculations.** Dates, diffs, effective-date selection, threshold checks, arithmetic, and action ordering are deterministic Python.
+- **The LLM does real orchestration.** The default browser path calls OpenAI server-side. The model discovers the available MCP tools, sources, and prepared case items; it selects the tool sequence and explains the verified outcome.
+- **MCP makes the AI inspectable.** The browser exposes a readable trace of the model's tool calls rather than asking a judge to trust a fluent answer.
+- **Models never own decisive calculations.** Dates, diffs, effective-date selection, threshold checks, arithmetic, action ordering, and evidence outcomes are deterministic Python.
 - **Rules live in data.** Domain packs define sources, obligations, scoping, triggers, obligation-level predicates, and evidence rules.
 - **Missing material facts fail closed.** An incomplete threshold or event becomes `indeterminate`; COURSE creates no action.
 - **Pack scope is not obligation scope.** COMPASS can confirm that a rule family is relevant while PLOT rules individual duties in, out, or indeterminate.
 - **History is inspectable.** Every agent writes to ATLAS, an append-only JSONL chain with linked hashes.
-- **The interface is replaceable.** CLI, browser demo, LLM orchestrator, and third-party clients use the same guarded pipeline or MCP tools.
+- **The interface is replaceable.** The browser, CLI, LLM orchestrator, and third-party clients use the same guarded pipeline or MCP tools.
 
 ## Current evidence
 
@@ -58,8 +61,8 @@ At the latest verification:
 - **112 automated tests pass**.
 - **8 executable acceptance checks pass** in `tools/build_evaluation_card.py`.
 - **9 domain packs** are loaded: six standalone packs and three declarative cross-border corridors.
-- **10 MCP tools** expose the system.
-- The browser demo and health endpoint are live on Render.
+- **12 MCP tools** expose the system, including discovery for domains, sources, and prepared holdings.
+- The browser demo defaults to a server-side OpenAI orchestrator and an inspectable MCP trace; deterministic calculation and labelled replay provide fallback layers.
 - Replay output is generated from real API responses for network-safe presentation fallback.
 
 The internal competition-readiness estimate is **87/100**. This is not an organiser or judge score. Points remain deliberately withheld for external user interviews, a design partner, and independent professional validation.
@@ -184,7 +187,7 @@ A streamable-HTTP server is also available:
 python -m tara.cli serve --transport streamable-http --port 8000
 ```
 
-The optional LLM orchestrator is an MCP client. It can choose tools and phrase results, but the deterministic pipeline remains responsible for the consequential checks.
+The LLM orchestrator is an MCP client. It chooses the tool sequence and phrases the result; the deterministic pipeline remains responsible for consequential checks. The deployed browser demo uses this path by default when its server-side `OPENAI_API_KEY` is configured.
 
 With the `llm` extra installed and `OPENAI_API_KEY` configured, run the real OpenAI-over-MCP path:
 
@@ -195,11 +198,11 @@ python -m tara.cli orchestrate \
   --model gpt-4.1-mini --show-tool-calls
 ```
 
-The model discovers exact domain, source, and holding IDs through MCP tools. If a required applicability fact is missing, it stops and asks for that fact rather than guessing. The browser demo remains deterministic and does not require an LLM or network call.
+The model discovers exact domain, source, and holding IDs through MCP tools. If a required applicability fact is missing, it stops and asks for that fact rather than guessing. The browser runs the same LLM-first sequence server-side, then presents the independently derived deterministic controls and a readable MCP trace.
 
 ## Demo and replay
 
-The live browser demo first calls its FastAPI adapter. If the host is cold or unreachable, the page uses `demo/replay.js`. Replay mode is labelled and covers only pristine prepared profiles.
+The live browser demo first calls its server-side OpenAI orchestrator, which calls local MCP tools over stdio. The result is paired with a separately rendered deterministic TARA run. If the model, OpenAI endpoint, or MCP session is unavailable, the page automatically uses the deterministic browser backup; if the host itself is unavailable, it uses `demo/replay.js`. Every fallback is visibly labelled and replay covers only pristine prepared profiles.
 
 Regenerate replay data after changing packs, register fields, agent behavior, or presets:
 
@@ -241,7 +244,7 @@ The highest-value next steps are an independent review of the Maeve rule path, f
 
 ## Presentation guidance
 
-Lead with the concrete failure: **an internally consistent 41% calculation is wrong for a 2026 event**. Show **What changed**, **What applies**, the **Action plan**, the evidence that **Needs correction**, the evidence that is **Accepted**, and the **Proof record**. Only then explain the nine agents, nine rule packs, and Model Context Protocol integration.
+Lead with the concrete failure: **an internally consistent 41% calculation is wrong for a 2026 event**. Show the **AI/MCP trace** first to establish the agent story, then show **What changed**, **What applies**, the **Action plan**, the evidence that **Needs correction**, the evidence that is **Accepted**, and the **Proof record**. Explain the deterministic safety boundary in one sentence: *the model chooses tools; TARA decides dates, calculations, and evidence outcomes.*
 
 For slide decks, the safest live-demo embed is a button or QR code to [https://tara-demo.onrender.com/](https://tara-demo.onrender.com/), plus two static backup screenshots. Embedded web views are optional and depend on venue networking and presentation software. The [judge-facing slide checklist](docs/judge-slide-checklist.md) maps the story to the official four judging areas.
 

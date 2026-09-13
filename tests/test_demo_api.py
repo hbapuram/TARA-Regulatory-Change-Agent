@@ -28,6 +28,38 @@ def test_health_reports_the_complete_loaded_surface():
     assert len(health["agents"]) == 9
 
 
+def test_ai_status_is_explicit_when_no_server_key_is_configured(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    status = api.ai_status()
+    assert status["available"] is False
+    assert status["mode"] == "deterministic backup only"
+
+
+def test_ai_demo_route_combines_mcp_orchestration_with_rendered_controls(monkeypatch):
+    expected = {
+        "summary": "The current 38% rule applies and a reviewer should check the dated actions.",
+        "model": "test-model",
+        "tool_trace": [
+            {"tool": "list_domains", "arguments": {}, "status": "completed"},
+            {"tool": "list_holdings", "arguments": {}, "status": "completed"},
+        ],
+    }
+    monkeypatch.setattr(api, "_orchestrate", lambda req: expected)
+
+    result = api.ai_run(maeve_request())
+
+    assert result["orchestration"] == expected
+    assert result["run"]["atlas"]["chain_verified"] is True
+    assert any(action["obligation_id"] == "OBL-002B" for action in result["run"]["actions"])
+
+
+def test_mcp_subprocess_context_never_receives_the_openai_key(monkeypatch, tmp_path):
+    monkeypatch.setenv("OPENAI_API_KEY", "secret-not-for-mcp")
+    env = api._mcp_subprocess_env(tmp_path / "register.json", tmp_path / "atlas.jsonl", tmp_path / "graph.json")
+    assert "OPENAI_API_KEY" not in env
+    assert env["TARA_REGISTER_JSON"].endswith("register.json")
+
+
 def test_recommended_preset_is_the_certified_maeve_path():
     presets = api.presets()
     assert presets[0]["id"] == "maeve"

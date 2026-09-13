@@ -1,6 +1,6 @@
 # Connecting an AI client to TARA's MCP server
 
-TARA's MCP server (`tara/mcp_server/server.py`) exposes the same 10 tools
+TARA's MCP server (`tara/mcp_server/server.py`) exposes the same 12 tools
 regardless of which AI tool is calling it. Two transports, one behavioral
 split: local coding tools (Claude Desktop, Claude Code, Cursor, Codex CLI)
 spawn the server themselves over **stdio** — nothing to deploy. Cloud-hosted
@@ -8,10 +8,12 @@ app builders (Lovable, Replit Agent, Manus) instead connect to a
 network-reachable URL, which means **streamable-HTTP**.
 
 > **Important distinction:** the public browser demo at
-> [tara-demo.onrender.com](https://tara-demo.onrender.com) is a FastAPI demo
-> adapter, not a public MCP endpoint. No authenticated public MCP deployment is
-> provided by this repository. Keep the current MCP service local and synthetic
-> until authentication, tenancy, rate limits, and durable storage are added.
+> [tara-demo.onrender.com](https://tara-demo.onrender.com) now uses a
+> server-side OpenAI model to call a **local, request-scoped MCP subprocess**.
+> The browser never receives an OpenAI key and no public MCP endpoint is
+> exposed. An authenticated public MCP deployment is still future production
+> work; keep external MCP use local and synthetic until authentication,
+> tenancy, rate limits, and durable storage are added.
 
 ## Local tools (stdio — works right now, no deployment needed)
 

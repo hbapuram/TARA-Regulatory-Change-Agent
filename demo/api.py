@@ -9,11 +9,13 @@ editable synthetic evidence examples; ANCHOR's verdict on them is computed by
 the real pipeline.
 
 Why a JSON API next to the MCP server rather than the MCP server itself:
-a browser cannot speak MCP's streamable-HTTP transport (no CORS, session
-headers, SSE framing), so a static demo page has nothing it can call. This
-module is the browser-facing adapter — same agents, same band order, one
-extra hop. ``tara serve --transport streamable-http`` remains the interface
-for real MCP clients and is unaffected by anything in this file.
+a browser cannot safely hold an OpenAI key or speak MCP's streamable-HTTP
+transport. This module is the browser-facing adapter. Its default `/api/ai/run`
+path invokes an OpenAI model server-side, lets it choose guarded local MCP
+tools, and returns an inspectable tool trace alongside the independently
+rendered deterministic result. `/api/run` remains the no-model fallback.
+``tara serve --transport streamable-http`` remains the interface for real MCP
+clients and is unaffected by anything in this file.
 
 Stateless by design: every request builds a fresh TaraContext over a
 temporary register + ATLAS ledger, so two people driving the demo at once
@@ -538,6 +540,8 @@ def health() -> dict[str, Any]:
         "domain_packs": sorted(PACK_META),
         "pack_count": len(PACK_META),
         "agents": ["SURVEY", "LEGEND", "ALMANAC", "COMPASS", "PLOT", "COURSE", "ANCHOR", "MERIDIAN", "ATLAS"],
+        "ai_orchestration_available": _llm_enabled(),
+        "ai_orchestration_model": os.environ.get("TARA_LLM_MODEL") if _llm_enabled() else None,
         "server_time": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     }
 
@@ -567,8 +571,7 @@ def presets() -> Any:
     return json.loads((DEMO_DIR / "presets.json").read_text(encoding="utf-8"))
 
 
-@app.post("/api/run")
-def run(req: RunRequest) -> dict[str, Any]:
+def _run_pipeline(req: RunRequest) -> dict[str, Any]:
     """The whole end-to-end pass: OPEN band once, then MERIDIAN per holding
     across every loaded pack, then the actions and the ATLAS chain."""
     as_of = _as_of(req.as_of)
@@ -680,6 +683,110 @@ def run(req: RunRequest) -> dict[str, Any]:
         "actions": all_actions,
         "atlas": atlas,
     }
+
+
+@app.post("/api/run")
+def run(req: RunRequest) -> dict[str, Any]:
+    """Deterministic browser fallback for the prepared demo cases."""
+    return _run_pipeline(req)
+
+
+def _llm_enabled() -> bool:
+    return bool(os.environ.get("OPENAI_API_KEY"))
+
+
+def _mcp_subprocess_env(register_path: Path, atlas_path: Path, graph_path: Path) -> dict[str, str]:
+    """Pass only execution context to the MCP subprocess, never the OpenAI key.
+
+    The LLM process owns the key. The MCP subprocess sees a request-scoped,
+    synthetic register and temporary trace paths, so it cannot read or alter
+    the repository's example ledger while serving a browser request.
+    """
+    env = {key: os.environ[key] for key in ("PATH", "PYTHONPATH", "LANG", "LC_ALL") if os.environ.get(key)}
+    env.update({
+        "TARA_REGISTER_JSON": str(register_path),
+        "TARA_ATLAS_PATH": str(atlas_path),
+        "TARA_GRAPH_VERSION_PATH": str(graph_path),
+    })
+    return env
+
+
+def _orchestrate(req: RunRequest) -> dict[str, Any]:
+    """Run one constrained, server-side OpenAI session against TARA's MCP tools."""
+    if not _llm_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail="AI orchestration is not configured. Switch to the deterministic backup mode.",
+        )
+
+    from tara.orchestrator import llm
+
+    register = _register_from(req.holder, req.holdings)
+    as_of = _as_of(req.as_of).isoformat()
+    with TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        register_path = tmp_path / "register.json"
+        register_path.write_text(json.dumps(register, indent=2), encoding="utf-8")
+        prompt = f"""You are the AI orchestration layer in TARA's prepared demonstration.
+
+Your job is to investigate a regulatory change for one synthetic case, using only MCP tool results.
+The event date is {as_of}. The supplied applicability answers are {json.dumps(req.answers, sort_keys=True)}.
+
+First call list_domains and list_holdings. Use the returned titles to choose the relevant domain for the prepared case.
+Before investigating a rule change, call list_sources for that exact domain and use only a returned source_id.
+For holder-specific work, use only a holding_id returned by list_holdings. You must call survey_detect_change, compass_assess, and course_plan before you answer. Supply the exact event date and the supplied answers to the assessment and action-planning tools.
+
+Return a concise plain-language explanation with: what changed, what applies or what fact is missing, the next actions, and the human-review boundary. Do not invent names, dates, source IDs, rates, or conclusions. This is decision support for a qualified reviewer, not legal or tax advice."""
+        try:
+            required = {"list_domains", "list_holdings", "list_sources", "survey_detect_change", "compass_assess", "course_plan"}
+            result = llm.run(
+                prompt,
+                model=os.environ.get("TARA_LLM_MODEL", "gpt-4.1-mini"),
+                max_turns=int(os.environ.get("TARA_LLM_MAX_TURNS", "12")),
+                server_env=_mcp_subprocess_env(
+                    register_path,
+                    tmp_path / "atlas_log.jsonl",
+                    tmp_path / "graph_version.json",
+                ),
+                required_tools=required,
+            )
+        except llm.OrchestratorNotConfigured as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"AI orchestration did not complete: {exc}") from exc
+
+    trace = [
+        {
+            "tool": call.name,
+            "arguments": call.arguments,
+            "status": "needs attention" if call.result.startswith("ERROR:") else "completed",
+        }
+        for call in result.tool_calls
+    ]
+    observed = {step["tool"] for step in trace}
+    if not required <= observed:
+        raise HTTPException(status_code=502, detail="AI orchestration completed without the required MCP discovery steps.")
+    return {
+        "summary": result.answer,
+        "model": os.environ.get("TARA_LLM_MODEL", "gpt-4.1-mini"),
+        "tool_trace": trace,
+    }
+
+
+@app.get("/api/ai/status")
+def ai_status() -> dict[str, Any]:
+    return {
+        "available": _llm_enabled(),
+        "mode": "OpenAI orchestrator over local MCP tools" if _llm_enabled() else "deterministic backup only",
+        "model": os.environ.get("TARA_LLM_MODEL", "gpt-4.1-mini") if _llm_enabled() else None,
+    }
+
+
+@app.post("/api/ai/run")
+def ai_run(req: RunRequest) -> dict[str, Any]:
+    """LLM-first demo path: orchestration via MCP plus independently rendered controls."""
+    orchestration = _orchestrate(req)
+    return {"run": _run_pipeline(req), "orchestration": orchestration}
 
 
 @app.post("/api/verify")

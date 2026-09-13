@@ -30,7 +30,7 @@ flowchart LR
 | 7 | Qualitative timing is not invented | **PASS** | A source that says 'within a reasonable period' remains manually scheduled; TARA emits no fabricated statutory date. |
 | 8 | Audit chain verifies | **PASS** | ATLAS verifies a 21-entry hash chain after the acceptance run. |
 
-**Test inventory:** `112 tests collected`. The canonical command is `pytest -q`.
+**Test inventory:** `115 tests collected`. The canonical command is `pytest -q`.
 
 ## Competition readiness score
 
