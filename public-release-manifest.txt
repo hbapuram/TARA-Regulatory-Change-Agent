@@ -11,6 +11,7 @@ README.md
 SECURITY.md
 apps
 data/sources
+deck-research
 demo
 deploy
 docs/index.html
