@@ -863,11 +863,13 @@ def _relay_orchestration(req: RunRequest) -> dict[str, Any]:
     # presenter-visible failure, without broadening the data boundary.
     last_error: Exception | None = None
     payload: dict[str, Any] | None = None
-    for delay_seconds in (0, 10, 20, 40):
+    # Keep the complete relay budget below common hosted request limits. The
+    # deterministic controls can respond immediately if the upstream is down.
+    for delay_seconds in (0, 5):
         if delay_seconds:
             time.sleep(delay_seconds)
         try:
-            with urlopen(request, timeout=90) as response:  # nosec B310 — operator-configured service URL
+            with urlopen(request, timeout=20) as response:  # nosec B310 — operator-configured service URL
                 candidate = json.loads(response.read().decode("utf-8"))
             if isinstance(candidate, dict):
                 payload = candidate
