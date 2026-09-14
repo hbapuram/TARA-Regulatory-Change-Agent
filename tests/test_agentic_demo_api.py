@@ -62,6 +62,22 @@ def test_live_investigator_is_separate_from_authoritative_controls(monkeypatch):
     assert result["controls"]["atlas"]["chain_verified"] is True
 
 
+def test_live_investigator_uses_explicit_controls_only_fallback_on_relay_502(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("TARA_AGENT_RELAY_URL", "https://tara-demo.onrender.com")
+
+    def unavailable(_request):
+        raise api.HTTPException(status_code=502, detail="upstream unavailable")
+
+    monkeypatch.setattr(api, "_relay_orchestration", unavailable)
+    result = api._orchestrate_case_investigator(request_for("maeve"))
+
+    assert result["fallback"] is True
+    assert result["relay"] is False
+    assert result["model"] == "deterministic fallback (relay unavailable)"
+    assert result["tool_trace"][0]["tool"] == "deterministic_controls"
+
+
 def test_live_interview_can_explain_only_a_control_selected_question(monkeypatch):
     request = request_for("ciaran")
     controls = api.run(request)

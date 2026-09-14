@@ -925,7 +925,26 @@ def _orchestrate_case_investigator(req: RunRequest) -> dict[str, Any]:
         raise HTTPException(status_code=503, detail="Live agent investigation is not configured on this service.")
 
     if not _llm_enabled():
-        orchestration = _relay_orchestration(req)
+        try:
+            orchestration = _relay_orchestration(req)
+        except HTTPException as exc:
+            if exc.status_code != 502:
+                raise
+            controls = _run_pipeline(req)
+            actions = controls.get("actions", [])
+            pending = controls.get("pending_questions", [])
+            action_text = f"The controls identified {len(actions)} dated action(s)." if actions else "The controls found no dated actions."
+            fact_text = f"{len(pending)} applicability question(s) remain." if pending else "No additional applicability fact was required."
+            return {
+                "summary": (
+                    "The live model relay is temporarily unavailable. The deterministic controls completed successfully: "
+                    f"{action_text} {fact_text} A qualified reviewer should verify the cited source and recorded actions."
+                ),
+                "model": "deterministic fallback (relay unavailable)",
+                "tool_trace": [{"tool": "deterministic_controls", "arguments": {}, "status": "completed"}],
+                "relay": False,
+                "fallback": True,
+            }
         trace = orchestration.get("tool_trace", [])
         required = {"list_domains", "list_holdings", "list_sources", "survey_detect_change", "compass_assess", "course_plan"}
         observed = {step.get("tool") for step in trace if isinstance(step, dict)}
@@ -936,6 +955,7 @@ def _orchestrate_case_investigator(req: RunRequest) -> dict[str, Any]:
             "model": orchestration.get("model", "configured relay model"),
             "tool_trace": trace,
             "relay": True,
+            "fallback": False,
         }
 
     from tara.orchestrator import llm
@@ -980,7 +1000,7 @@ Never calculate, select a rate, create an action, or approve evidence yourself. 
     observed = {step["tool"] for step in trace}
     if not required <= observed:
         raise HTTPException(status_code=502, detail="Live agent investigation did not complete its required discovery steps.")
-    return {"summary": result.answer, "model": os.environ.get("TARA_LLM_MODEL", "gpt-5-mini"), "tool_trace": trace, "relay": False}
+    return {"summary": result.answer, "model": os.environ.get("TARA_LLM_MODEL", "gpt-5-mini"), "tool_trace": trace, "relay": False, "fallback": False}
 
 
 def _orchestrate_missing_fact_interview(req: RunRequest, question: dict[str, Any]) -> dict[str, Any]:

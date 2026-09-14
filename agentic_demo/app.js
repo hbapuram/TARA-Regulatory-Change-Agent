@@ -714,9 +714,9 @@ function agentTraceHtml(trace) {
 function liveInvestigatorPanel() {
   const relayLocked = !!(S.aiInfo && S.aiInfo.prepared_case_relay && !profileIsPristine());
   const unavailable = !(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm") || relayLocked;
-  const output = S.investigator ? `<div class="agent-answer"><div class="ai-response-label" aria-label="AI-generated response"><span aria-hidden="true">✦</span> AI-generated response</div><p>${esc(S.investigator.summary)}</p>
+  const output = S.investigator ? `<div class="agent-answer">${S.investigator.fallback ? `<div class="fallback-response-label" aria-label="Deterministic fallback response">◈ Deterministic fallback response</div>` : `<div class="ai-response-label" aria-label="AI-generated response"><span aria-hidden="true">✦</span> AI-generated response</div>`}<p>${esc(S.investigator.summary)}</p>
     <details class="technical-details"><summary>Show live agent tool trace</summary>
-      <p class="hint">Model: <code>${esc(S.investigator.model || "configured model")}</code>${S.investigator.relay ? " · prepared synthetic-case relay" : ""}. The trace shows the guarded tools the investigator actually called.</p>
+      <p class="hint">Mode: <code>${esc(S.investigator.model || "configured model")}</code>${S.investigator.relay ? " · prepared synthetic-case relay" : S.investigator.fallback ? " · controls-only fallback" : ""}. The trace shows the guarded tools the investigator actually called.</p>
       ${agentTraceHtml(S.investigator.tool_trace)}
     </details></div>` : "";
   return `<section class="agent-panel card pad stack" aria-label="Live case investigator">
