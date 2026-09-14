@@ -16,5 +16,10 @@ services:
         value: "gpt-5-mini"
       - key: TARA_LLM_MAX_TURNS
         value: "12"
-      # Set OPENAI_API_KEY as a secret in this service. It is never sent to
-      # the browser or to the request-scoped MCP subprocess.
+      # This no-secret relay forwards only unchanged checked-in synthetic
+      # profiles to the already controlled AI/MCP demo service. It never
+      # forwards browser-edited cases or an API key.
+      - key: TARA_AGENT_RELAY_URL
+        value: "https://tara-demo.onrender.com"
+      # Optional: set OPENAI_API_KEY as a secret here for a fully independent
+      # agent. It is never sent to the browser or MCP subprocess.

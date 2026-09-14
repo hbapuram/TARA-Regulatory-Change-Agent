@@ -35,6 +35,8 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterator
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 import yaml
 from fastapi import FastAPI, HTTPException
@@ -49,6 +51,7 @@ from tara.mcp_server.context import TaraContext, build_context
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEMO_DIR = Path(__file__).resolve().parent
+PRESETS_PATH = DEMO_DIR / "presets.json"
 
 PRIMARY_YAML = REPO_ROOT / "domains" / "tax.yaml"
 LINKED_YAMLS = [
@@ -801,6 +804,73 @@ def _agent_trace(result: Any) -> list[dict[str, Any]]:
     ]
 
 
+def _is_prepared_case(req: RunRequest) -> bool:
+    """Allow relay use only for an unchanged checked-in synthetic profile.
+
+    The second hosted service has no model credential of its own. Its optional
+    relay is deliberately constrained to the profiles committed in this
+    directory; it will never forward typed or modified case data to another
+    service.
+    """
+    actual = {
+        "holder": req.holder.model_dump(),
+        "holdings": [holding.model_dump() for holding in req.holdings],
+        "answers": req.answers,
+    }
+    for preset in json.loads(PRESETS_PATH.read_text(encoding="utf-8")):
+        expected = RunRequest(
+            holder=preset["holder"],
+            holdings=preset["holdings"],
+            answers=preset.get("answers", {}),
+        )
+        candidate = {
+            "holder": expected.holder.model_dump(),
+            "holdings": [holding.model_dump() for holding in expected.holdings],
+            "answers": expected.answers,
+        }
+        if actual == candidate:
+            return True
+    return False
+
+
+def _relay_url() -> str | None:
+    """Read the existing controlled service's URL, if relay use is enabled."""
+    value = os.environ.get("TARA_AGENT_RELAY_URL", "").strip().rstrip("/")
+    return value or None
+
+
+def _relay_orchestration(req: RunRequest) -> dict[str, Any]:
+    """Use the existing model service for unchanged synthetic cases only."""
+    relay = _relay_url()
+    if relay is None:
+        raise HTTPException(status_code=503, detail="No live agent connection is configured on this service.")
+    if not _is_prepared_case(req):
+        raise HTTPException(
+            status_code=403,
+            detail="Live agent relay is limited to the unchanged prepared synthetic cases in this demo.",
+        )
+    body = json.dumps(req.model_dump(), separators=(",", ":")).encode("utf-8")
+    request = Request(
+        f"{relay}/api/ai/run",
+        data=body,
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=90) as response:  # nosec B310 — operator-configured service URL
+            payload = json.loads(response.read().decode("utf-8"))
+    except (URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=502, detail=f"Prepared-case live agent relay did not complete: {exc}") from exc
+    orchestration = payload.get("orchestration")
+    if not isinstance(orchestration, dict) or not isinstance(orchestration.get("summary"), str):
+        raise HTTPException(status_code=502, detail="Prepared-case live agent relay returned an invalid response.")
+    return orchestration
+
+
+def _agent_available() -> bool:
+    return _llm_enabled() or _relay_url() is not None
+
+
 def _safe_interview_summary(answer: str, canonical_question: str) -> str:
     """Return a very narrow, non-decisional interview explanation.
 
@@ -836,8 +906,22 @@ def _orchestrate_case_investigator(req: RunRequest) -> dict[str, Any]:
     live investigation visible and answerable, while the browser continues to
     render conclusions from _run_pipeline rather than model prose.
     """
-    if not _llm_enabled():
+    if not _agent_available():
         raise HTTPException(status_code=503, detail="Live agent investigation is not configured on this service.")
+
+    if not _llm_enabled():
+        orchestration = _relay_orchestration(req)
+        trace = orchestration.get("tool_trace", [])
+        required = {"list_domains", "list_holdings", "list_sources", "survey_detect_change", "compass_assess", "course_plan"}
+        observed = {step.get("tool") for step in trace if isinstance(step, dict)}
+        if not required <= observed:
+            raise HTTPException(status_code=502, detail="Prepared-case live agent relay did not complete its required discovery steps.")
+        return {
+            "summary": orchestration["summary"],
+            "model": orchestration.get("model", "configured relay model"),
+            "tool_trace": trace,
+            "relay": True,
+        }
 
     from tara.orchestrator import llm
 
@@ -881,13 +965,31 @@ Never calculate, select a rate, create an action, or approve evidence yourself. 
     observed = {step["tool"] for step in trace}
     if not required <= observed:
         raise HTTPException(status_code=502, detail="Live agent investigation did not complete its required discovery steps.")
-    return {"summary": result.answer, "model": os.environ.get("TARA_LLM_MODEL", "gpt-5-mini"), "tool_trace": trace}
+    return {"summary": result.answer, "model": os.environ.get("TARA_LLM_MODEL", "gpt-5-mini"), "tool_trace": trace, "relay": False}
 
 
 def _orchestrate_missing_fact_interview(req: RunRequest, question: dict[str, Any]) -> dict[str, Any]:
     """Let the model explain one control-selected question, but not answer it."""
-    if not _llm_enabled():
+    if not _agent_available():
         raise HTTPException(status_code=503, detail="Live agent interview is not configured on this service.")
+
+    if not _llm_enabled():
+        orchestration = _relay_orchestration(req)
+        trace = orchestration.get("tool_trace", [])
+        required = {"list_domains", "list_holdings", "compass_assess"}
+        observed = {step.get("tool") for step in trace if isinstance(step, dict)}
+        if not required <= observed:
+            raise HTTPException(status_code=502, detail="Prepared-case live agent relay did not complete its required interview-context steps.")
+        return {
+            "summary": (
+                f"{question['text']}\n"
+                "The live investigator checked the prepared case. A qualified reviewer must confirm this fact before TARA re-runs its deterministic controls."
+            ),
+            "model": orchestration.get("model", "configured relay model"),
+            "tool_trace": trace,
+            "output_withheld": True,
+            "relay": True,
+        }
 
     from tara.orchestrator import llm
 
@@ -946,15 +1048,26 @@ Do not ask a different question. Do not suggest Yes or No. Do not mention a tool
         "model": os.environ.get("TARA_LLM_MODEL", "gpt-5-mini"),
         "tool_trace": trace,
         "output_withheld": output_withheld,
+        "relay": False,
     }
 
 
 @app.get("/api/ai/status")
 def ai_status() -> dict[str, Any]:
+    via_relay = not _llm_enabled() and _relay_url() is not None
     return {
-        "available": _llm_enabled(),
-        "mode": "OpenAI orchestrator over local MCP tools" if _llm_enabled() else "deterministic backup only",
-        "model": os.environ.get("TARA_LLM_MODEL", "gpt-5-mini") if _llm_enabled() else None,
+        "available": _agent_available(),
+        "mode": (
+            "OpenAI orchestrator over local MCP tools" if _llm_enabled()
+            else "prepared synthetic-case relay to the controlled AI/MCP service" if via_relay
+            else "deterministic backup only"
+        ),
+        "model": (
+            os.environ.get("TARA_LLM_MODEL", "gpt-5-mini") if _llm_enabled()
+            else "controlled relay model" if via_relay
+            else None
+        ),
+        "prepared_case_relay": via_relay,
     }
 
 

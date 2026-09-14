@@ -18,7 +18,7 @@ python -m uvicorn agentic_demo.api:app --host 127.0.0.1 --port 8001
 
 Open `http://127.0.0.1:8001`.
 
-Without `OPENAI_API_KEY`, the copied workflow remains available with its labelled deterministic path and captured replay. The live agent buttons stay disabled rather than silently substituting model output.
+Without `OPENAI_API_KEY`, the copied workflow remains available with its labelled deterministic path and captured replay. In the separate hosted service, `TARA_AGENT_RELAY_URL` may be configured to the existing controlled TARA AI/MCP service. That relay accepts **only exact, unchanged checked-in synthetic profiles**; typed or modified browser data stays in the isolated service and receives deterministic controls only. It forwards no API key.
 
 ## Safety boundary
 
@@ -31,4 +31,4 @@ pytest -q tests/test_agentic_demo_api.py
 node --check agentic_demo/app.js
 ```
 
-Use `render-agentic.yaml` to create a separate hosted service named `tara-agentic-demo`. Configure its `OPENAI_API_KEY` secret separately; it is never sent to the browser or the request-scoped MCP subprocess.
+Use `render-agentic.yaml` to create a separate hosted service named `tara-agentic-demo`. It configures the prepared-case relay by default. To replace the relay with a fully independent agent, configure its own `OPENAI_API_KEY` secret; the key is never sent to the browser or the request-scoped MCP subprocess.

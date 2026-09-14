@@ -215,6 +215,11 @@ async function doInvestigate() {
     render();
     return;
   }
+  if (S.aiInfo && S.aiInfo.prepared_case_relay && !profileIsPristine()) {
+    S.agentError = "The live agent relay accepts only the unchanged prepared synthetic examples. Your edited case remains available to deterministic controls but is not sent to another service.";
+    render();
+    return;
+  }
   S.agentBusy = true; S.agentError = null; render();
   try {
     const out = await api("/api/agent/investigate", runPayload());
@@ -231,6 +236,11 @@ async function doInvestigate() {
 async function doAgentInterview(questionId) {
   if (!(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm")) {
     S.agentError = "The live interview guide needs AI/MCP mode and an available connection. The canonical question remains available below.";
+    render();
+    return;
+  }
+  if (S.aiInfo && S.aiInfo.prepared_case_relay && !profileIsPristine()) {
+    S.agentError = "The live agent relay accepts only the unchanged prepared synthetic examples. The canonical question and deterministic controls remain available for this edited case.";
     render();
     return;
   }
@@ -701,10 +711,11 @@ function agentTraceHtml(trace) {
 }
 
 function liveInvestigatorPanel() {
-  const unavailable = !(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm");
+  const relayLocked = !!(S.aiInfo && S.aiInfo.prepared_case_relay && !profileIsPristine());
+  const unavailable = !(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm") || relayLocked;
   const output = S.investigator ? `<div class="agent-answer"><p>${esc(S.investigator.summary)}</p>
     <details class="technical-details"><summary>Show live agent tool trace</summary>
-      <p class="hint">Model: <code>${esc(S.investigator.model || "configured model")}</code>. The trace shows the guarded tools the investigator actually called.</p>
+      <p class="hint">Model: <code>${esc(S.investigator.model || "configured model")}</code>${S.investigator.relay ? " · prepared synthetic-case relay" : ""}. The trace shows the guarded tools the investigator actually called.</p>
       ${agentTraceHtml(S.investigator.tool_trace)}
     </details></div>` : "";
   return `<section class="agent-panel card pad stack" aria-label="Live case investigator">
@@ -714,7 +725,7 @@ function liveInvestigatorPanel() {
     <p class="reason">The investigator discovers the permitted source and case tools, then explains the path it found. The controls below—not the model’s prose—remain authoritative for the rule, date, calculation, action, and evidence outcome.</p>
     <div class="row"><button class="btn" id="runInvestigator" type="button" ${unavailable || S.agentBusy ? "disabled" : ""}>${S.agentBusy ? "Investigating…" : S.investigator ? "Run a fresh investigation" : "Investigate this case live"}</button>
       ${S.agentBusy ? `<span class="spin" aria-label="Investigator running"></span>` : ""}</div>
-    ${unavailable ? `<p class="hint">Live investigation is available only when the browser is connected to an AI/MCP-enabled service. The standard deterministic workflow remains usable.</p>` : ""}
+    ${relayLocked ? `<p class="hint">Live investigation is protected for unchanged prepared synthetic cases only. Your edited case has not been sent to the relay; deterministic controls remain usable.</p>` : unavailable ? `<p class="hint">Live investigation is available only when the browser is connected to an AI/MCP-enabled service. The standard deterministic workflow remains usable.</p>` : ""}
     ${S.agentError ? `<div class="warn">${esc(S.agentError)}</div>` : ""}
     ${output}
   </section>`;
@@ -722,7 +733,8 @@ function liveInvestigatorPanel() {
 
 function liveInterviewPanel(question) {
   const state = S.interviews[question.question_id];
-  const unavailable = !(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm");
+  const relayLocked = !!(S.aiInfo && S.aiInfo.prepared_case_relay && !profileIsPristine());
+  const unavailable = !(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm") || relayLocked;
   if (!state) {
     return `<div class="agent-invite"><button class="btn ghost" type="button" data-agent-interview="${esc(question.question_id)}" ${unavailable || S.agentBusy ? "disabled" : ""}>Ask the live investigator why this fact matters</button>
       <span class="hint">The agent may explain the canonical question but cannot answer it or change it.</span></div>`;
@@ -732,7 +744,7 @@ function liveInterviewPanel(question) {
   return `<div class="agent-answer"><span class="eyebrow">Live agent explanation</span><p>${esc(state.summary)}</p>
     ${state.output_withheld ? `<p class="hint"><b>Response control applied:</b> The investigator completed its guarded tool calls, but its free-form prose did not meet the narrow interview policy. The unsupported text was withheld; the canonical question and your confirmation path are unchanged.</p>` : ""}
     <details class="technical-details"><summary>Show live interview tool trace</summary>
-      <p class="hint">Model: <code>${esc(state.model || "configured model")}</code>. The agent used the same guarded case-assessment tools before explaining the question.</p>
+      <p class="hint">Model: <code>${esc(state.model || "configured model")}</code>${state.relay ? " · prepared synthetic-case relay" : ""}. The agent used the same guarded case-assessment tools before explaining the question.</p>
       ${agentTraceHtml(state.tool_trace)}
     </details>
     <p class="hint"><b>Confirmation required:</b> Choose and explicitly confirm an answer below. The agent’s explanation does not update any case fact.</p>

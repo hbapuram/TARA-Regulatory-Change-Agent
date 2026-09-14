@@ -101,3 +101,36 @@ def test_live_interview_summary_rejects_decisional_or_numeric_detail(answer):
     with pytest.raises(api.HTTPException) as exc:
         api._safe_interview_summary(answer, question)
     assert exc.value.status_code == 502
+
+
+def test_prepared_case_relay_accepts_only_an_unchanged_checked_in_profile(monkeypatch):
+    class Response:
+        def read(self):
+            return json.dumps({"orchestration": {"summary": "prepared agent output", "model": "relay-model", "tool_trace": []}}).encode()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setenv("TARA_AGENT_RELAY_URL", "https://relay.invalid")
+    monkeypatch.setattr(api, "urlopen", lambda request, timeout: Response())
+    prepared = request_for("maeve")
+
+    assert api._relay_orchestration(prepared)["summary"] == "prepared agent output"
+
+    edited = prepared.model_copy(deep=True)
+    edited.holder.name = "Not a prepared profile"
+    with pytest.raises(api.HTTPException) as exc:
+        api._relay_orchestration(edited)
+    assert exc.value.status_code == 403
+
+
+def test_agent_status_labels_prepared_case_relay(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("TARA_AGENT_RELAY_URL", "https://tara-demo.onrender.com")
+
+    status = api.ai_status()
+    assert status["available"] is True
+    assert status["prepared_case_relay"] is True
