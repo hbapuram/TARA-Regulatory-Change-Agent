@@ -2,6 +2,8 @@
 
 This directory is an **isolated copy** of TARA's existing browser demonstration. It preserves the original `demo/` directory and its deployment without modification.
 
+**Deployed demonstration:** [https://tara-agentic-demo.onrender.com](https://tara-agentic-demo.onrender.com)
+
 The agentic copy adds two visible, server-side AI capabilities for **prepared synthetic cases and controlled source snapshots only**:
 
 1. **Live Case Investigator.** A model discovers TARA's guarded MCP tools, investigates the prepared case, and returns a short plain-language explanation with its tool trace. The deterministic pipeline remains authoritative for the source version, effective date, threshold, arithmetic, action plan, and evidence outcome.
