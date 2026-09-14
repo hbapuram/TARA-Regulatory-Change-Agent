@@ -30,6 +30,14 @@ def test_agentic_demo_serves_a_distinct_browser_shell():
     assert "Ask the live investigator" in (ROOT / "agentic_demo" / "app.js").read_text()
 
 
+def test_agentic_browser_visibly_marks_model_generated_responses():
+    browser = (ROOT / "agentic_demo" / "app.js").read_text()
+    styles = (ROOT / "agentic_demo" / "index.html").read_text()
+
+    assert browser.count("AI-generated response") >= 3
+    assert "ai-response-label" in styles
+
+
 def test_live_investigator_is_separate_from_authoritative_controls(monkeypatch):
     expected = {
         "summary": "• Section 4.3 changed from 41% to 38%.\n• The controls selected the current rule.\n• A reviewer should check the evidence.",

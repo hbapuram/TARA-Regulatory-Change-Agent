@@ -675,6 +675,7 @@ function orchestrationPanel() {
     ).join("");
     return `<section class="card pad stack openband" aria-label="AI and MCP orchestration">
       <div><span class="eyebrow">AI orchestration · MCP</span><h3>How the LLM investigated this case</h3></div>
+      <div class="ai-response-label" aria-label="AI-generated response"><span aria-hidden="true">✦</span> AI-generated response</div>
       <p class="reason">${esc(S.orchestration.summary || "The LLM completed a tool-guided review.")}</p>
       <ol class="mcp-trace">${trace}</ol>
       <p class="hint"><b>Safety boundary:</b> the model selects and calls tools. TARA's deterministic controls decide dates, rates, calculations, and evidence outcomes.</p>
@@ -713,13 +714,13 @@ function agentTraceHtml(trace) {
 function liveInvestigatorPanel() {
   const relayLocked = !!(S.aiInfo && S.aiInfo.prepared_case_relay && !profileIsPristine());
   const unavailable = !(S.mode === "live" && S.aiAvailable && S.aiPreference === "llm") || relayLocked;
-  const output = S.investigator ? `<div class="agent-answer"><p>${esc(S.investigator.summary)}</p>
+  const output = S.investigator ? `<div class="agent-answer"><div class="ai-response-label" aria-label="AI-generated response"><span aria-hidden="true">✦</span> AI-generated response</div><p>${esc(S.investigator.summary)}</p>
     <details class="technical-details"><summary>Show live agent tool trace</summary>
       <p class="hint">Model: <code>${esc(S.investigator.model || "configured model")}</code>${S.investigator.relay ? " · prepared synthetic-case relay" : ""}. The trace shows the guarded tools the investigator actually called.</p>
       ${agentTraceHtml(S.investigator.tool_trace)}
     </details></div>` : "";
   return `<section class="agent-panel card pad stack" aria-label="Live case investigator">
-    <div class="agent-header"><div><span class="eyebrow">Live agent · MCP</span>
+    <div class="agent-header"><div><span class="eyebrow"><span class="ai-symbol" aria-hidden="true">✦</span> Live agent · MCP</span>
       <h3>Ask the live investigator to explain this case</h3></div>
       <span class="st st-${unavailable ? "SKIPPED" : "CONFIRMED"}">${unavailable ? "Agent unavailable" : "Ready"}</span></div>
     <p class="reason">The investigator discovers the permitted source and case tools, then explains the path it found. The controls below—not the model’s prose—remain authoritative for the rule, date, calculation, action, and evidence outcome.</p>
@@ -741,7 +742,7 @@ function liveInterviewPanel(question) {
   }
   if (state.busy) return `<div class="agent-answer"><span class="spin"></span> The investigator is checking the controlled case context…</div>`;
   if (state.error) return `<div class="warn">${esc(state.error)}</div>`;
-  return `<div class="agent-answer"><span class="eyebrow">Live agent explanation</span><p>${esc(state.summary)}</p>
+  return `<div class="agent-answer"><span class="eyebrow"><span class="ai-symbol" aria-hidden="true">✦</span> Live agent explanation</span><div class="ai-response-label" aria-label="AI-generated response"><span aria-hidden="true">✦</span> AI-generated response</div><p>${esc(state.summary)}</p>
     ${state.output_withheld ? `<p class="hint"><b>Response control applied:</b> The investigator completed its guarded tool calls, but its free-form prose did not meet the narrow interview policy. The unsupported text was withheld; the canonical question and your confirmation path are unchanged.</p>` : ""}
     <details class="technical-details"><summary>Show live interview tool trace</summary>
       <p class="hint">Model: <code>${esc(state.model || "configured model")}</code>${state.relay ? " · prepared synthetic-case relay" : ""}. The agent used the same guarded case-assessment tools before explaining the question.</p>
