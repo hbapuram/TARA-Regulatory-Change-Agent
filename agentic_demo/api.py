@@ -30,12 +30,13 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterator
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 import yaml
@@ -856,11 +857,25 @@ def _relay_orchestration(req: RunRequest) -> dict[str, Any]:
         headers={"content-type": "application/json"},
         method="POST",
     )
-    try:
-        with urlopen(request, timeout=90) as response:  # nosec B310 — operator-configured service URL
-            payload = json.loads(response.read().decode("utf-8"))
-    except (URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise HTTPException(status_code=502, detail=f"Prepared-case live agent relay did not complete: {exc}") from exc
+    # A free hosted relay may be waking from an idle state. Retrying only this
+    # unchanged prepared request prevents a transient upstream 502 becoming a
+    # presenter-visible failure, without broadening the data boundary.
+    last_error: Exception | None = None
+    payload: dict[str, Any] | None = None
+    for delay_seconds in (0, 10, 20, 40):
+        if delay_seconds:
+            time.sleep(delay_seconds)
+        try:
+            with urlopen(request, timeout=90) as response:  # nosec B310 — operator-configured service URL
+                candidate = json.loads(response.read().decode("utf-8"))
+            if isinstance(candidate, dict):
+                payload = candidate
+                break
+            last_error = ValueError("response was not a JSON object")
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            last_error = exc
+    if payload is None:
+        raise HTTPException(status_code=502, detail=f"Prepared-case live agent relay did not complete: {last_error}") from last_error
     orchestration = payload.get("orchestration")
     if not isinstance(orchestration, dict) or not isinstance(orchestration.get("summary"), str):
         raise HTTPException(status_code=502, detail="Prepared-case live agent relay returned an invalid response.")
