@@ -37,6 +37,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterator
 from urllib.error import HTTPError, URLError
+from http.client import RemoteDisconnected
 from urllib.request import Request, urlopen
 
 import yaml
@@ -872,7 +873,7 @@ def _relay_orchestration(req: RunRequest) -> dict[str, Any]:
                 payload = candidate
                 break
             last_error = ValueError("response was not a JSON object")
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        except (HTTPError, URLError, TimeoutError, RemoteDisconnected, ConnectionError, json.JSONDecodeError) as exc:
             last_error = exc
     if payload is None:
         raise HTTPException(status_code=502, detail=f"Prepared-case live agent relay did not complete: {last_error}") from last_error
