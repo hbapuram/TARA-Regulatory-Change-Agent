@@ -10,6 +10,7 @@ LICENSE
 README.md
 SECURITY.md
 apps
+agentic_demo
 data/sources
 demo
 deploy
@@ -19,6 +20,7 @@ domains
 pyproject.toml
 registers/holder_register.json
 render.yaml
+render-agentic.yaml
 requirements-dev.txt
 requirements.txt
 tara

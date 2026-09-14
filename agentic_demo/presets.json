@@ -1,0 +1,95 @@
+[
+  {
+    "id": "maeve",
+    "name": "Maeve",
+    "tagline": "Recommended: see one tax-rate change become a clear action plan",
+    "story": "Maeve holds an offshore fund. The tax rate changes from 41% to 38%, so TARA works out which rate applies, what she needs to do, and whether her calculation is correct.",
+    "recommended": true,
+    "start_stage": 3,
+    "focus_domain_id": "tax",
+    "focus_obligation_id": "OBL-002B",
+    "answers": {"SQ-03": false},
+    "holder": {
+      "holder_id": "H-101", "name": "Maeve",
+      "citizenships": ["Ireland"], "tax_residencies": ["Ireland"],
+      "tax_residency_since": "2010-01-01", "eea_swiss_uk_national": true,
+      "holder_residency": "Irish tax resident"
+    },
+    "holdings": [
+      {"holding_id": "HLD-101", "instrument_type": "offshore_fund", "jurisdiction": "Luxembourg",
+       "acquisition_date": "2018-08-15", "status": "held",
+       "fatca_threshold_met": false, "form_3520_reportable_event": false,
+       "pfic_reportable_event": false, "india_source_income": false}
+    ]
+  },
+  {
+    "id": "ciaran",
+    "name": "Ciarán",
+    "tagline": "Explore: an Irish citizen living in the US sells a Dublin home",
+    "story": "See how one property sale can create Irish tax steps, US reporting questions, and a possible cross-border tax credit.",
+    "holder": {
+      "holder_id": "H-201", "name": "Ciarán",
+      "citizenships": ["Ireland"], "tax_residencies": ["United States"],
+      "tax_residency_since": "2024-08-01", "eea_swiss_uk_national": true,
+      "holder_residency": "Irish ordinarily resident"
+    },
+    "holdings": [
+      {"holding_id": "HLD-201", "instrument_type": "residential_property", "jurisdiction": "Ireland",
+       "acquisition_date": "2016-05-20", "status": "disposed",
+       "disposal_date": "2026-07-15", "disposal_consideration": 1250000,
+       "fatca_threshold_met": false, "form_3520_reportable_event": false,
+       "pfic_reportable_event": false, "india_source_income": false},
+      {"holding_id": "HLD-202", "instrument_type": "foreign_bank_account", "jurisdiction": "Ireland",
+       "acquisition_date": "2016-05-20", "status": "held", "peak_aggregate_value_usd": 96000,
+       "fatca_threshold_met": true, "form_3520_reportable_event": false,
+       "pfic_reportable_event": false, "india_source_income": false}
+    ]
+  },
+  {
+    "id": "priya",
+    "name": "Priya",
+    "tagline": "Explore: an Indian citizen living in Ireland has assets in both countries",
+    "story": "See which Indian and Irish rules apply, which do not, and where tax-treaty documents may help prevent double taxation.",
+    "holder": {
+      "holder_id": "H-301", "name": "Priya",
+      "citizenships": ["India"], "tax_residencies": ["Ireland"],
+      "tax_residency_since": "2021-07-01", "eea_swiss_uk_national": false,
+      "holder_residency": "Irish tax resident"
+    },
+    "holdings": [
+      {"holding_id": "HLD-301", "instrument_type": "offshore_fund", "jurisdiction": "Ireland",
+       "acquisition_date": "2018-06-05", "status": "held", "india_source_income": false,
+       "fatca_threshold_met": false, "form_3520_reportable_event": false, "pfic_reportable_event": false},
+      {"holding_id": "HLD-302", "instrument_type": "direct_equity", "jurisdiction": "India",
+       "acquisition_date": "2019-02-20", "status": "disposed",
+       "disposal_date": "2026-08-01", "disposal_consideration": 950000,
+       "india_itr_due_date": "2027-07-31", "india_source_income": true,
+       "fatca_threshold_met": false, "form_3520_reportable_event": false, "pfic_reportable_event": false},
+      {"holding_id": "HLD-303", "instrument_type": "offshore_fund", "jurisdiction": "India",
+       "acquisition_date": "2021-11-15", "status": "held", "india_source_income": true,
+       "fatca_threshold_met": false, "form_3520_reportable_event": false, "pfic_reportable_event": false}
+    ]
+  },
+  {
+    "id": "arun",
+    "name": "Arun",
+    "tagline": "Explore: an Irish residence renewal and an offshore fund",
+    "story": "See immigration and tax tasks brought into one simple action plan, with each result explained separately.",
+    "holder": {
+      "holder_id": "H-401", "name": "Arun",
+      "citizenships": ["India"], "tax_residencies": ["Ireland"],
+      "tax_residency_since": "2018-09-03", "eea_swiss_uk_national": false,
+      "holder_residency": "Irish tax resident"
+    },
+    "holdings": [
+      {"holding_id": "HLD-401", "instrument_type": "immigration_permission", "jurisdiction": "Ireland",
+       "acquisition_date": "2018-09-03", "status": "held",
+       "irp_registration_due_date": "2018-12-02", "irp_expiry_date": "2026-11-14",
+       "india_source_income": false, "fatca_threshold_met": false,
+       "form_3520_reportable_event": false, "pfic_reportable_event": false},
+      {"holding_id": "HLD-402", "instrument_type": "offshore_fund", "jurisdiction": "Ireland",
+       "acquisition_date": "2017-03-11", "status": "held", "india_source_income": false,
+       "fatca_threshold_met": false, "form_3520_reportable_event": false, "pfic_reportable_event": false}
+    ]
+  }
+]

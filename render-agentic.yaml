@@ -1,0 +1,20 @@
+# Separate Render blueprint for the isolated TARA Agentic Demo.
+# This service does not alter or share the existing tara-demo deployment.
+services:
+  - type: web
+    name: tara-agentic-demo
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt -r agentic_demo/requirements.txt && pip install --no-deps -e .
+    startCommand: python -m uvicorn agentic_demo.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: TARA_LLM_MODEL
+        value: "gpt-5-mini"
+      - key: TARA_LLM_MAX_TURNS
+        value: "12"
+      # Set OPENAI_API_KEY as a secret in this service. It is never sent to
+      # the browser or to the request-scoped MCP subprocess.
